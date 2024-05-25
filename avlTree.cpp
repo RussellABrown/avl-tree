@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, 2023, Russell A. Brown
+ * Copyright (c) 1996, 2016, 2023, 2024, Russell A. Brown
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -29,456 +29,750 @@
  */
 
 /*
- * AVL tree building program adapted from Pascal procedures
+ * AVL tree-building program adapted from Pascal procedures
  * 4.63 (p. 220) and 4.64 (p. 223) of Nicklaus Wirth's textbook,
- * "Algorithms + Data Structures = Programs", with correction
- * of the bug in the del procedure, which has bifurcated into
- * the removeLeft and removeRight methods.
+ * "Algorithms + Data Structures = Programs" with correction
+ * of the bug in the del procedure and bifurcation of that
+ * procedure into the eraseLeft and eraseRight methods.
+ *
+ * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_TREE avlTree.cpp
  */
 
 #include <iostream>
-#include <stdexcept>
+#include <list>
+#include <vector>
 
 using namespace std;
 
-/* The class node defines the nodes in the tree. */
-template <typename T>
-class node {
-private:
-    T key;
-    int count, bal;
-    node<T> *left, *right;
-    
-    /*
-     * Here is the constructor for the class node.
-     * The argument h is passed by reference and modified.
-     */
-public:
-    node( T const& x, bool& h ) {
-        h = true;				/* tree height has changed */
-        key = x;
-        count = 1;
-        bal = 0;
-        left = right = nullptr;
-    }
-    
-    /*
-     * This method searches the tree for the existence of a key,
-     * and either inserts a new node or increments a counter.  The
-     * tree is then rebalanced recursively backtracking up the tree.
-     * The variable h is passed by reference and modified. The
-     * "this" pointer is copied to the "p" pointer which is
-     * modified and returned.
-     */
-public:
-    node<T>* addNode( T const& x, bool& h ) {
-        
-        node<T>* p = this;
-        
-        if ( x < p->key ) {                         /* search the left branch? */
-            if ( p->left != nullptr ) {
-                p->left = left->addNode( x, h );
-            } else {
-                p->left = new node<T>( x, h );
-            }
-            if ( h == true ) {                      /* left branch has grown higher */
-                switch ( p->bal ) {
-                    case 1:                         /* balance restored */
-                        p->bal = 0;
-                        h = false;
-                        break;
-                    case 0:                         /* tree has become more unbalanced */
-                        p->bal = -1;
-                        break;
-                    case -1:		                /* tree must be rebalanced */
-                        node<T>* p1 = p->left;
-                        if ( p1->bal == -1 ) {		/* single LL rotation */
-                            p->left = p1->right;
-                            p1->right = p;
-                            p->bal = 0;
-                            p = p1;
-                        } else {			        /* double LR rotation */
-                            node<T>* p2 = p1->right;
-                            p1->right = p2->left;
-                            p2->left = p1;
-                            p->left = p2->right;
-                            p2->right = p;
-                            if ( p2->bal == -1 ) p->bal = 1;
-                            else p->bal = 0;
-                            if ( p2->bal == 1 ) p1->bal = -1;
-                            else p1->bal = 0;
-                            p = p2;
-                        }
-                        p->bal = 0;
-                        h = false;
-                        break;
-                }
-            }
-        } else if ( x > p->key ) {                  /* search the right branch? */
-            if ( p->right != nullptr ) {
-                p->right = right->addNode( x, h );
-            } else {
-                p->right = new node<T>( x, h );
-            }
-            if ( h == true ) {                      /* right branch has grown higher */
-                switch ( p->bal ) {
-                    case -1:                        /* balance restored */
-                        p->bal = 0;
-                        h = false;
-                        break;
-                    case 0:                         /* tree has become more unbalanced */
-                        p->bal = 1;
-                        break;
-                    case 1:                         /* tree must be rebalanced */
-                        node<T>* p1 = p->right;
-                        if ( p1->bal == 1 ) {       /* single RR rotation */
-                            p->right = p1->left;
-                            p1->left = p;
-                            p->bal = 0;
-                            p = p1;
-                        } else {                    /* double RL rotation */
-                            node<T>* p2 = p1->left;
-                            p1->left = p2->right;
-                            p2->right = p1;
-                            p->right = p2->left;
-                            p2->left = p;
-                            if ( p2->bal == 1 ) p->bal = -1;
-                            else p->bal = 0;
-                            if ( p2->bal == -1 ) p1->bal = 1;
-                            else p1->bal = 0;
-                            p = p2;
-                        }
-                        p->bal = 0;
-                        h = false;
-                        break;
-                }
-            }
-        } else {            /* x is already in tree, so increment its redundancy */
-            p->count++;
-            h = false;
-        }
-        return p;
-    }
-    
-    /*
-     * This method rebalances following deletion of a
-     * left node.  The argument h is passed by reference and
-     * modified.  The "this" pointer is copied to the "p"
-     * pointer which is modified and returned.
-     */
-private:
-    node<T>* balanceLeft( bool& h ) {
-        
-        node<T>* p = this;
-        
-        switch ( p->bal ) {
-            case -1:                    /* balance restored */
-                p->bal = 0;
-                break;
-            case 0:                     /* tree has become more unbalanced */
-                p->bal = 1;
-                h = false;
-                break;
-            case 1:                     /* tree must be rebalanced */
-                node<T>* p1 = p->right;
-                if ( p1->bal >= 0 ) {   /* single RR rotation */
-                    p->right = p1->left;
-                    p1->left = p;
-                    if ( p1->bal == 0 ) {
-                        p->bal = 1;
-                        p1->bal = -1;
-                        h = false;
-                    } else {
-                        p->bal = 0;
-                        p1->bal = 0;
-                    }
-                    p = p1;
-                } else {				  /* double RL rotation */
-                    node<T>* p2 = p1->left;
-                    p1->left = p2->right;
-                    p2->right = p1;
-                    p->right = p2->left;
-                    p2->left = p;
-                    if ( p2->bal == 1 ) p->bal = -1;
-                    else p->bal = 0;
-                    if ( p2->bal == -1 ) p1->bal = 1;
-                    else p1->bal = 0;
-                    p = p2;
-                    p->bal = 0;
-                }
-                break;
-        }
-        return p;
-    }
-    
-    /*
-     * This method rebalances following deletion of a
-     * right node.  The argument h is passed by reference and
-     * modified.  The "this" pointer is copied to the "p"
-     * pointer which is modified and returned.
-     */
-private:
-    node<T>* balanceRight( bool& h ) {
-        
-        node<T>* p = this;
-        
-        switch ( p->bal ) {
-            case 1:                     /* balance restored */
-                p->bal = 0;
-                break;
-            case 0:                     /* tree has become more unbalanced */
-                p->bal = -1;
-                h = false;
-                break;
-            case -1:                    /* tree must be rebalanced */
-                node<T>* p1 = p->left;
-                if ( p1->bal <= 0 ) {   /* single LL rotation */
-                    p->left = p1->right;
-                    p1->right = p;
-                    if ( p1->bal == 0 ) {
-                        p->bal = -1;
-                        p1->bal = 1;
-                        h = false;
-                    } else {
-                        p->bal = 0;
-                        p1->bal = 0;
-                    }
-                    p = p1;
-                } else {				  /* double LR rotation */
-                    node<T>* p2 = p1->right;
-                    p1->right = p2->left;
-                    p2->left = p1;
-                    p->left = p2->right;
-                    p2->right = p;
-                    if ( p2->bal == -1 ) p->bal = 1;
-                    else p->bal = 0;
-                    if ( p2->bal == 1 ) p1->bal = -1;
-                    else p1->bal = 0;
-                    p = p2;
-                    p->bal = 0;
-                }
-                break;
-        }
-        return p;
-    }
-    
-    /*
-     * This method replaces the node to be deleted with the
-     * leftmost node of the right subtree.  The arguments q and h
-     * are passed by reference and modified.  The "this" pointer
-     * is coped to the "p" pointer which is modified and returned.
-     */
-private:
-    node<T>* removeLeft( node<T>*& q, bool& h ) {
-        
-        node<T>* p = this;
-        
-        if ( p->left != nullptr ) {
-            p->left = left->removeLeft( q, h );
-            if ( h == true ) p = balanceLeft( h );
-        } else {
-            q->key = p->key;                /* copy node contents to q */
-            q->count = p->count;
-            q = p;                          /* redefine q as node to be deleted */
-            p = p->right;                   /* replace node with right branch */
-            h = true;
-        }
-        return p;
-    }
-    
-    /*
-     * This method replaces the node to be deleted with the
-     * rightmost node of the left subtree.  The arguments q and h
-     * are passed by reference and modified.  The "this" pointer
-     * is copied to the "p" pointer which is modified and returned.
-     */
-private:
-    node<T>* removeRight( node<T>*& q, bool& h ) {
-        
-        node<T>* p = this;
-        
-        if ( p->right != nullptr ) {
-            p->right = p->right->removeRight( q, h );
-            if ( h == true ) p = balanceRight( h );
-        } else {
-            q->key = p->key;                /* copy node contents to q */
-            q->count = p->count;
-            q = p;                          /* redefine q as node to be deleted  */
-            p = p->left;                    /* replace node with left branch */
-            h = true;
-        }
-        return p;
-    }
-    
-    /*
-     * This method removes a node from the tree, then
-     * rebalances recursively by backtracking up the tree
-     * The argument h is passed by reference and modified. The
-     * "this" pointer is coped to the "p" pointer which
-     * is modified and returned.
-     */
-public:
-    node<T>* removeNode( T const& x, bool& h ) {
-        
-        node<T>* p = this;
-        
-        if ( x < p->key ) {                     /* search left branch? */
-            if ( p->left != nullptr ) {
-                p->left = p->left->removeNode( x, h );
-                if ( h ) {
-                    p = balanceLeft( h );
-                }
-            } else {
-                cout << "key " << x << " is not in tree\n";
-                h = false;
-            }
-        } else if ( x > p->key ) {                /* search right branch? */
-            if ( p->right != nullptr ) {
-                p->right = p->right->removeNode( x, h );
-                if ( h ) {
-                    p = balanceRight( h );
-                }
-            } else {
-                cout << "key " << x << " is not in tree\n";
-                h = false;
-            }
-        } else if ( p->count-- <= 1 ) {         /* x == key and not redundant, so... */
-            node<T>* q = p;                     /* ...select this node for removal */
-            if ( p->right == nullptr ) {        /* if one branch is nullptr... */
-                p = p->left;
-                h = true;
-            } else if ( p->left == nullptr ) {  /* ...replace with the other one */
-                p = p->right;
-                h = true;
-            } else {
-                switch ( p->bal ) {             /* otherwise find a node to remove */
-                    case 0: case -1:            /* left or neither subtree is deeper */
-                        p->left = p->left->removeRight( q, h );
-                        if ( h == true ) {
-                            p = balanceLeft( h );
-                        }
-                        break;
-                    case 1:                     /* right subtree is deeper */
-                        p->right = p->right->removeLeft( q, h );
-                        if ( h == true ) {
-                            p = balanceRight( h );
-                        }
-                        break;
-                }
-            }
-            delete q;
-        }
-        return p;
-    }
-    
-    /* This method prints each node of the tree. */
-    
-    void printTree( int l ) {
-        if ( right != nullptr ) {
-            right->printTree( l+1 );
-        }
-        for ( int i = 0; i < l; i++ ) {
-            cout << "    ";
-        }
-        cout << key << "\n";
-        if ( left ) {
-            left->printTree( l+1 );
-        }
-    }
-    
-    /*
-     * This method deletes every node in the tree.  If the
-     * tree has been completely deleted via calls to remove,
-     * this function won't be called.
-     */
-    
-    void deleteTree() {
-        
-        if ( right != nullptr ){
-            right->deleteTree();
-            right = nullptr;
-        }
-        if ( left != nullptr ) {
-            left->deleteTree();
-            left = nullptr;
-        }
-        delete this;
-    }
-};
-
 /*
- * The class tree defines the root of the tree, and is a
- * container class for the nodes of the tree.
+ * The avlTree class defines the root of the AVL tree as well as the avlNode class.
  */
 template <typename T>
-class tree {
+class avlTree {
+
+    /* The avlNode class defines a node in the AVL tree. */
+
+    class avlNode {
+
+    private:
+        T key;          /* the key stored in this avlNode */
+        size_t copies;  /* the number of attempts to insert the key into the tree */
+        int bal;        /* the left/right balance that assumes values of -1, 0, or +1 */
+        avlNode *left, *right;
+        
+        /*
+         * Here is the constructor for the avlNode class.
+         *
+         * Calling parameters:
+         * 
+         * x - the key to store in the avlNode
+         * h - passed by reference and assigned true to
+         *     specify that the tree height has changed
+         */
+    public:
+        avlNode( T const& x, bool& h ) {
+            h = true;
+            key = x;
+            copies = 1;
+            bal = 0;
+            left = right = nullptr;
+        }
+        
+        /* This method searches the tree for the existence of a key.
+         *
+         * The "this" pointer is copied to the "p" pointer that is
+         * replaced by either the left or right child pointer as the
+         * search iteratively descends through the tree.
+         * 
+         * Calling parameter:
+         *
+         * x - the key to search for
+         * 
+         * return - true if the key was found; otherwise, false
+         */
+    public:
+        bool contains( T const& x) {
+            
+            avlNode* p = this;
+            
+            while ( p != nullptr ) {
+                if ( x < p->key ) {
+                    p = p->left;                        /* follow the left branch */
+                } else if ( x > p->key ) {
+                    p = p->right;                       /* follow the right branch */
+                } else {
+                    return true;                        /* found the key, so return true */
+                }
+            }
+            return false;                               /* didn't find the key, so return false */
+        }
+        
+        /*
+         * This method searches the tree recursively for the existence
+         * of a key, and either adds the key as a new avlNode or
+         * increments the "copies" counter. Then the tree is rebalanced
+         * if necessary.
+         * 
+         * The "this" pointer is copied to the "p" pointer that is
+         * possibly modified and is returned to represent the root of
+         * the sub-tree.
+         *
+         * Calling parameters:
+         *
+         * x - the key to add to the tree
+         * h - if true, the height of the tree has changed;
+         *     passed by reference and modified
+         * a - if true, the key was added as a new avlNode;
+         *     passed by reference and modified
+         * 
+         * return - the root of the rebalanced sub-tree
+         */
+    public:
+        avlNode* insert( T const& x, bool& h, bool& a ) {
+            
+            avlNode* p = this;
+            
+            if ( x < p->key ) {                         /* search the left branch? */
+                if ( p->left != nullptr ) {
+                    p->left = left->insert( x, h, a );
+                } else {
+                    p->left = new avlNode( x, h );
+                    a = true;
+                }
+                if ( h == true ) {                      /* left branch has grown higher */
+                    switch ( p->bal ) {
+                        case 1:                         /* balance restored */
+                            p->bal = 0;
+                            h = false;
+                            break;
+                        case 0:                         /* tree has become more unbalanced */
+                            p->bal = -1;
+                            break;
+                        case -1:		                /* tree must be rebalanced */
+                            avlNode* p1 = p->left;
+                            if ( p1->bal == -1 ) {		/* single LL rotation */
+                                p->left = p1->right;
+                                p1->right = p;
+                                p->bal = 0;
+                                p = p1;
+                            } else {			        /* double LR rotation */
+                                avlNode* p2 = p1->right;
+                                p1->right = p2->left;
+                                p2->left = p1;
+                                p->left = p2->right;
+                                p2->right = p;
+                                if ( p2->bal == -1 ) {
+                                    p->bal = 1;
+                                } else {
+                                    p->bal = 0;
+                                }
+                                if ( p2->bal == 1 ) {
+                                    p1->bal = -1;
+                                } else {
+                                    p1->bal = 0;
+                                }
+                                p = p2;
+                            }
+                            p->bal = 0;
+                            h = false;
+                            break;
+                    }
+                }
+            } else if ( x > p->key ) {                  /* search the right branch? */
+                if ( p->right != nullptr ) {
+                    p->right = right->insert( x, h, a );
+                } else {
+                    p->right = new avlNode( x, h );
+                    a = true;
+                }
+                if ( h == true ) {                      /* right branch has grown higher */
+                    switch ( p->bal ) {
+                        case -1:                        /* balance restored */
+                            p->bal = 0;
+                            h = false;
+                            break;
+                        case 0:                         /* tree has become more unbalanced */
+                            p->bal = 1;
+                            break;
+                        case 1:                         /* tree must be rebalanced */
+                            avlNode* p1 = p->right;
+                            if ( p1->bal == 1 ) {       /* single RR rotation */
+                                p->right = p1->left;
+                                p1->left = p;
+                                p->bal = 0;
+                                p = p1;
+                            } else {                    /* double RL rotation */
+                                avlNode* p2 = p1->left;
+                                p1->left = p2->right;
+                                p2->right = p1;
+                                p->right = p2->left;
+                                p2->left = p;
+                                if ( p2->bal == 1 ) {
+                                    p->bal = -1;
+                                } else {
+                                    p->bal = 0;
+                                }
+                                if ( p2->bal == -1 ) {
+                                    p1->bal = 1;
+                                } else {
+                                    p1->bal = 0;
+                                }
+                                p = p2;
+                            }
+                            p->bal = 0;
+                            h = false;
+                            break;
+                    }
+                }
+            } else {  /* the key is already in tree, so increment "copies" and don't modify the tree */
+                p->copies++;
+                h = false;
+                a = false;
+            }
+            return p;  /* the root of the rebalanced sub-tree */
+        }
+        
+        /*
+         * This method rebalances following deletion of a
+         * left avlNode.
+         * 
+         * The "this" pointer is copied to the "p" pointer that is
+         * possibly modified and is returned to represent the root of
+         * the sub-tree.
+         * 
+         * Calling parameter:
+         * 
+         * h - if true, the height of the tree has changed;
+         *     passed by reference and modified
+         * 
+         * return - the root of the rebalanced sub-tree
+         */
+    private:
+        avlNode* balanceLeft( bool& h ) {
+            
+            avlNode* p = this;
+            
+            switch ( p->bal ) {
+                case -1:                    /* balance restored */
+                    p->bal = 0;
+                    break;
+                case 0:                     /* tree has become more unbalanced */
+                    p->bal = 1;
+                    h = false;
+                    break;
+                case 1:                     /* tree must be rebalanced */
+                    avlNode* p1 = p->right;
+                    if ( p1->bal >= 0 ) {   /* single RR rotation */
+                        p->right = p1->left;
+                        p1->left = p;
+                        if ( p1->bal == 0 ) {
+                            p->bal = 1;
+                            p1->bal = -1;
+                            h = false;
+                        } else {
+                            p->bal = 0;
+                            p1->bal = 0;
+                        }
+                        p = p1;
+                    } else {				  /* double RL rotation */
+                        avlNode* p2 = p1->left;
+                        p1->left = p2->right;
+                        p2->right = p1;
+                        p->right = p2->left;
+                        p2->left = p;
+                        if ( p2->bal == 1 ) {
+                            p->bal = -1;
+                        } else {
+                            p->bal = 0;
+                        }
+                        if ( p2->bal == -1 ) {
+                            p1->bal = 1;
+                        } else {
+                            p1->bal = 0;
+                        }
+                        p = p2;
+                        p->bal = 0;
+                    }
+                    break;
+            }
+            return p; /* the root of the rebalanced sub-tree */
+        }
+        
+        /*
+         * This method rebalances following deletion of a
+         * right avlNode.
+         * 
+         * The "this" pointer is copied to the "p" pointer that is
+         * possibly modified and is returned to represent the root of
+         * the sub-tree.
+         * 
+         * Calling parameter:
+         * 
+         * h - if true, the height of the tree has changed;
+         *     passed by reference and modified
+         * 
+         * return - the root of the rebalanced sub-tree
+         */
+    private:
+        avlNode* balanceRight( bool& h ) {
+            
+            avlNode* p = this;
+            
+            switch ( p->bal ) {
+                case 1:                     /* balance restored */
+                    p->bal = 0;
+                    break;
+                case 0:                     /* tree has become more unbalanced */
+                    p->bal = -1;
+                    h = false;
+                    break;
+                case -1:                    /* tree must be rebalanced */
+                    avlNode* p1 = p->left;
+                    if ( p1->bal <= 0 ) {   /* single LL rotation */
+                        p->left = p1->right;
+                        p1->right = p;
+                        if ( p1->bal == 0 ) {
+                            p->bal = -1;
+                            p1->bal = 1;
+                            h = false;
+                        } else {
+                            p->bal = 0;
+                            p1->bal = 0;
+                        }
+                        p = p1;
+                    } else {				  /* double LR rotation */
+                        avlNode* p2 = p1->right;
+                        p1->right = p2->left;
+                        p2->left = p1;
+                        p->left = p2->right;
+                        p2->right = p;
+                        if ( p2->bal == -1 ) {
+                            p->bal = 1;
+                        } else {
+                            p->bal = 0;
+                        }
+                        if ( p2->bal == 1 ) {
+                            p1->bal = -1;
+                        } else {
+                            p1->bal = 0;
+                        }
+                        p = p2;
+                        p->bal = 0;
+                    }
+                    break;
+            }
+            return p;  /* the root of the rebalanced sub-tree */
+        }
+        
+        /*
+         * This method replaces the avlNode to be deleted with the
+         * leftmost avlNode of the right sub-tree. Then the tree is
+         * rebalanced if necessary.
+         * 
+         * The "this" pointer is copied to the "p" pointer that is
+         * possibly modified and is returned to represent the root of
+         * the sub-tree.
+         * 
+         * Calling parameters:
+         * 
+         * q - the avlNode to be deleted;
+         *     passed by reference and modified
+         * h - if true, the height of the tree has changed;
+         *     passed by reference and modified
+         * 
+         * return - the root of the rebalanced sub-tree
+         */
+     private:
+        avlNode* eraseLeft( avlNode*& q, bool& h ) {
+            
+            avlNode* p = this;
+            
+            if ( p->left != nullptr ) {
+                p->left = left->eraseLeft( q, h );
+                if ( h == true ) p = balanceLeft( h );
+            } else {
+                q->key = p->key;                /* copy avlNode contents from p to q */
+                q->copies = p->copies;
+                q = p;                          /* redefine q as avlNode to be deleted */
+                p = p->right;                   /* replace avlNode with right branch */
+                h = true;
+            }
+            return p;  /* the root of the rebalanced sub-tree */
+        }
+        
+        /*
+         * This method replaces the avlNode to be deleted with the
+         * rightmost avlNode of the left sub-tree. Then the tree is
+         * rebalanced if necessary.
+         * 
+         * The "this" pointer is copied to the "p" pointer that is
+         * possibly modified and is returned to represent the root of
+         * the sub-tree.
+         * 
+         * Calling parameters:
+         * 
+         * q - the avlNode to be deleted;
+         *     passed by reference and modified
+         * h - if true, the height of the tree has changed;
+         *     passed by reference and modified
+         * 
+         * return - the root of the rebalanced sub-tree
+         */
+    private:
+        avlNode* eraseRight( avlNode*& q, bool& h ) {
+            
+            avlNode* p = this;
+            
+            if ( p->right != nullptr ) {
+                p->right = p->right->eraseRight( q, h );
+                if ( h == true ) p = balanceRight( h );
+            } else {
+                q->key = p->key;                /* copy avlNode contents from p to q */
+                q->copies = p->copies;
+                q = p;                          /* redefine q as avlNode to be deleted  */
+                p = p->left;                    /* replace avlNode with left branch */
+                h = true;
+            }
+            return p;  /* the root of the rebalanced sub-tree */
+        }
+        
+        /*
+         * This method removes an avlNode from the tree. Then
+         * the tree is rebalanced if necessary.
+         * 
+         * The "this" pointer is copied to the "p" pointer that is
+         * possibly modified and is returned to represent the root of
+         * the sub-tree.
+         * 
+         * Calling parameters:
+         * 
+         * x - the key to remove from the tree
+         * h - if true, the height of the tree has changed;
+         *     passed by reference and modified
+         * r - if true, the key was removed from the tree;
+         *     passed by reference and modified
+         * 
+         * return - the root of the rebalanced sub-tree
+        */
+     public:
+        avlNode* erase( T const& x, bool& h, bool& r ) {
+            
+            avlNode* p = this;
+            
+            if ( x < p->key ) {                     /* search left branch? */
+                if ( p->left != nullptr ) {
+                    p->left = p->left->erase( x, h, r );
+                    if ( h ) {
+                        p = balanceLeft( h );
+                    }
+                } else {
+                    h = false;                      /* key is not in the tree*/
+                    r = false;
+                }
+            } else if ( x > p->key ) {              /* search right branch? */
+                if ( p->right != nullptr ) {
+                    p->right = p->right->erase( x, h, r );
+                    if ( h ) {
+                        p = balanceRight( h );
+                    }
+                } else {
+                    h = false;                      /* key is not in the tree */
+                    r = false;
+                }
+            } else if ( p->copies-- <= 1 ) {        /* x == key and not redundant, so... */
+                avlNode* q = p;                     /* ...select this avlNode for removal */
+                if ( p->right == nullptr ) {        /* if one branch is nullptr... */
+                    p = p->left;
+                    h = true;
+                } else if ( p->left == nullptr ) {  /* ...replace with the other one */
+                    p = p->right;
+                    h = true;
+                } else {
+                    switch ( p->bal ) {             /* otherwise find a avlNode to remove */
+                        case 0: case -1:            /* left or neither subtree is deeper */
+                            p->left = p->left->eraseRight( q, h );
+                            if ( h == true ) {
+                                p = balanceLeft( h );
+                            }
+                            break;
+                        case 1:                     /* right subtree is deeper */
+                            p->right = p->right->eraseLeft( q, h );
+                            if ( h == true ) {
+                                p = balanceRight( h );
+                            }
+                            break;
+                    }
+                }
+                delete q;
+                r = true;
+            }
+            return p;  /* the root of the rebalanced sub-tree */
+        }
+        
+        /*
+         * This method prints the keys stored in the tree, where the
+         * key of the root of the tree is at the left and the keys of
+         * the leaf nodes are at the right.
+         * 
+         * Calling parameter:
+         * 
+         * d - the depth in the tree
+         */
+    public:
+        void printTree( int d ) {
+            if ( right != nullptr ) {
+                right->printTree( d+1 );
+            }
+            for ( int i = 0; i < d; ++i ) {
+                cout << "    ";
+            }
+            cout << key << "\n";
+            if ( left ) {
+                left->printTree( d+1 );
+            }
+        }
+        
+        /*
+         * This method deletes every avlNode in the tree.  If the
+         * tree has been completely deleted via prior calls to the
+         * erase() method, the ~tree() destructor will not call
+         * this method.
+         */
+    public:
+        void clear() {
+            
+            if ( left != nullptr ) {
+                left->clear();
+                left = nullptr;
+            }
+            if ( right != nullptr ){
+                right->clear();
+                right = nullptr;
+            }
+            delete this;
+        }
+        
+        /*
+         * This method walks the tree in order and stores each key in a vector.
+         *
+         * Calling parameters:
+         * 
+         * v - a vector of the keys;
+         *     passed by reference and modified
+         * i - an index to the next unoccupied vector element;
+         *     passed by reference and modified
+         */       
+    public:
+        void getKeys( vector<T>& v, size_t& i ) {
+
+            if ( left != nullptr ) {
+                left->getKeys( v, i );
+            }
+            v[i++] = this->key;
+            if ( right != nullptr ){
+                right->getKeys( v, i );
+            }
+        }
+    };
+
 private:
-    node<T>* root;
+    avlNode* root;  /* the root of the tree */
+    size_t count;   /* the number of nodes in the tree */
+   
+public:
+    avlTree() {
+        root = nullptr;
+        count = 0;
+    }
     
 public:
-    
-    tree() {
-        root = nullptr;
-    }
-    
-    ~tree() {
+    ~avlTree() {
         if ( root != nullptr ) {
-            root->deleteTree();
+            root->clear();
         }
         root = nullptr;
+        count = 0;
     }
-    
-    void addNode( T const& x, bool& h ) {
-        if ( root != nullptr ) {
-            root = root->addNode( x, h );
+
+    /* This method returns the number of avlNodes in the tree. */
+public:
+    size_t size() {
+        return count;
+    }
+
+    /* This method returns true if there are no avlNodes in the tree. */
+public:
+    bool empty() {
+        return ( count == 0 );
+    }
+
+    /* This method searches the tree for the existence of a key.
+     *
+     * Calling parameter:
+     *
+     * x - the key to search for
+     * 
+     * return - true if the key was found; otherwise, false
+     */
+public:
+    bool contains( T const& x ) {
+        if (root != nullptr) {
+            return root->contains( x );
         } else {
-            root = new node<T>( x, h);
+            return false;
         }
     }
     
-    void removeNode( T const& x, bool& h ) {
+    /*
+     * This method searches the tree for the existence of
+     * a key, and either adds the key as a new avlNode or
+     * increments an existing avlNode's "copies" counter.
+     * Then the tree is rebalanced if necessary.
+     *
+     * Calling parameter:
+     *
+     * x - the key to add to the tree
+     * 
+     * return - true if the key was added as a new avlNode; otherwise, false
+     */
+public:
+    bool insert( T const& x ) {
+        bool h = false, a = false;
         if ( root != nullptr ) {
-            root = root->removeNode( x, h );
+            root = root->insert( x, h, a );
+            if ( a == true ) {
+                ++count;
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            root = new avlNode( x, h );
+            ++count;
+            return true;
         }
     }
-    
+
+    /*
+     * This method removes an avlNode from the tree.
+     * Then the tree is rebalanced if necessary.
+     * 
+     * Calling parameter:
+     * 
+     * x - the key to remove from the tree
+     * 
+     * return - true if the key was removed from the tree; otherwise, false
+     */
+public:
+    bool erase( T const& x ) {
+        bool h = false, r = false;
+        if ( root != nullptr ) {
+            root = root->erase( x, h, r );
+            if ( r == true ) {
+                --count;
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /*
+     * This method prints the keys stored in the tree, where the
+     * key of the root of the tree is at the left and the keys of
+     * the leaf nodes are at the right.
+     */
+public:
     void printTree() {
         if ( root != nullptr ) {
             root->printTree( 0 );
         }
     }
-    
+
+    /*
+     * This method walks the tree in order and stores each key in a vector.
+     *
+     * Calling parameter:
+     * 
+     * v - a vector of the keys;
+     *     passed by reference and modified
+     */
+public:
+    void getKeys( vector<T>& v ) {
+        if ( root != nullptr ) {
+            size_t i = 0;
+            root->getKeys( v, i );
+        }
+    }
 };
 
+#ifdef TEST_AVL_TREE
+
 int main() {
+
+    /* 22 keys, one of which (14) is duplicated */
     
-    const int size = 22;
-    
-    int array[size] = { 8, 9, 11, 15, 19, 20, 21, 7,
-		      3, 2, 1, 5, 6, 4, 13, 14, 10,
-		      12, 14, 17, 16, 18 };
+   vector<int> const keys{ 8, 9, 11, 15, 19, 20, 21, 7, 3, 2, 1, 5, 6, 4, 13, 14, 10, 12, 14, 17, 16, 18 };
+
+   /* Present and missing keys */
+
+    int const presentKey = 13, missingKey = 0;
     
     char ch;
-    bool h = false;
-    tree<int>* t = new tree<int>();
-    t->printTree();
-    cout << endl;
-    for ( int i = 0; i < size; i++ ) {
-        cout << "press return to add " << array[i] << endl;
+    avlTree<int>* t = new avlTree<int>();
+
+    /* Add each key to the AVL tree. */
+
+    for ( size_t i = 0; i < keys.size(); ++i ) {
+        cout << endl << "press return to add " << keys[i] << endl;
         ch = cin.get();
-        t->addNode( array[i], h );
+        t->insert( keys[i] );
+        cout << "tree contains " << t->size() << " nodes" << endl << endl;
         t->printTree();
-        cout << endl;
     }
-    cout << "*** balanced tree completed ***" << endl << endl;
-    for ( int i = 0; i < size; i++ ) {
-        cout << "press return to remove " << array[i] << endl;
+    cout << endl << "*** balanced tree completed; ordered keys follow ***" << endl << endl;
+
+    /*
+     * Retrieve the keys sorted in ascending order and store them in a vector.
+     * Pre-allocate the vector to avoid re-sizing it.
+     */
+
+    vector<int> sortedKeys( t->size() );
+    t->getKeys( sortedKeys );
+    for (size_t i = 0; i < sortedKeys.size(); ++i) {
+        cout << sortedKeys[i] << " ";
+    }
+    cout << endl;
+
+    /* Test the contains() function. */
+
+    if ( t->contains( presentKey ) == false ) {
+        cout << endl << "error: failed to find key " << presentKey << endl;
+    }
+    if ( t->contains( missingKey ) == true ) {
+        cout << endl << "error: found key " << missingKey << endl;
+    }
+
+    /* Test the erase() function for a missing key. */
+
+    if ( t->erase( missingKey ) == true ) {
+        cout << endl << "error: removed key " << missingKey << endl;
+    }
+
+    /* Delete each key from the AVL tree. */
+
+    for ( size_t i = 0; i < keys.size(); ++i ) {
+        cout << endl << "press return to remove " << keys[i] << endl;
         ch = cin.get();
-        t->removeNode( array[i], h );
+        t->erase( keys[i] );
+        cout << "tree contains " << t->size() << " nodes" << endl << endl;
         t->printTree();
-        cout << endl;
     }
     cout << "all done" << endl << endl;
     
     return 0;
 }
+
+#endif
