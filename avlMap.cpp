@@ -32,11 +32,14 @@
  * AVL tree building program adapted from Pascal procedures
  * 4.63 (p. 220) and 4.64 (p. 223) of Nicklaus Wirth's textbook,
  * "Algorithms + Data Structures = Programs", with correction
- * of the bug in the del() procedure and replacement of del()
- * by the removeRight() and removeLeft() methods. The removeRight()
- * method performs the identical operations to del(), whereas
- * the removeRight() method performs the mirror-image operations
- * in an attempt to improve rebalancing efficiency after deletion.
+ * of the bug in the del() procedure and replacement of del
+ * by the removeRight and removeLeft() methods. The removeRight()
+ * method performs the identical operations to del, whereas
+ * the removeLeft method performs the mirror-image operations
+ * to removeRight in an attempt to improve rebalancing efficiency
+ * after deletion.
+ * 
+ * To build the test executable, compile via: g++ -O3 avlMap.cpp
  */
 
 #include <limits.h>
@@ -52,36 +55,6 @@
 #include <vector>
 
 using namespace std;
-
-/*
- * The mach_gettime function is an alternate to clock_gettime(CLOCK_REALTIME, &time) for Mach.
- * See http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
- */
-#ifdef MACH
-#include <mach/mach_time.h>
-
-#define MACH_NANO (+1.0E-9)
-#define MACH_GIGA UINT64_C(1000000000)
-
-static double mach_timebase = 0.0;
-static uint64_t mach_timestart = 0;
-
-struct timespec mach_gettime(void) {
-    // be more careful in a multithreaded environement
-    if (!mach_timestart) {
-        mach_timebase_info_data_t tb = { 0 };
-        mach_timebase_info(&tb);
-        mach_timebase = tb.numer;
-        mach_timebase /= tb.denom;
-        mach_timestart = mach_absolute_time();
-    }
-    struct timespec t;
-    double diff = (mach_absolute_time() - mach_timestart) * mach_timebase;
-    t.tv_sec = diff * MACH_NANO;
-    t.tv_nsec = diff - (t.tv_sec * MACH_GIGA);
-    return t;
-}
-#endif
 
 // an AVL node
 template <typename K, typename V>
@@ -105,10 +78,10 @@ public:
      * and either inserts a new node or updates a value.  The
      * tree is then rebalanced recursively backtracking up the tree.
      *
-     * @param p (MODIFIED) - pointer to an AVL node
-     * @param x (IN) - the key
-     * @param y (IN) - the value
-     * @param h (MODIFIED) - indicates whether the height has changed
+     * @param p (MODIFIED) pointer to an AVL node
+     * @param x (IN) the key
+     * @param y (IN) the value
+     * @param h (MODIFIED) indicates whether the height has changed
      *
      * @return true if update, false if insertion
      */
@@ -220,8 +193,8 @@ public:
      * This method rebalances following relocation of the rightmost node
      * of the left subtree.
      *
-     * @param p (MODIFIED) - pointer to an AVL node
-     * @param h (MODIFIED) - indicates whether the height has changed
+     * @param p (MODIFIED) pointer to an AVL node
+     * @param h (MODIFIED) indicates whether the height has changed
      */
 private:
     static void balanceLeft( node<K, V>*& p, bool& h ) {
@@ -282,8 +255,8 @@ private:
      * This method rebalances following relocation of the leftmost node
      * of the right subtree.
      *
-     * @param p (MODIFIED) - pointer to an AVL node
-     * @param h (MODIFIED) - indicates whether the height has changed
+     * @param p (MODIFIED) pointer to an AVL node
+     * @param h (MODIFIED) indicates whether the height has changed
      */
 private:
     static void balanceRight( node<K, V>*& p, bool& h ) {
@@ -344,9 +317,9 @@ private:
      * This method replaces the node to be deleted with
      * the leftmost node of the right subtree.
      *
-     * @param p (MODIFIED) - pointer to an AVL node
-     * @param p (MODIFIED) - pointer to another AVL node
-     * @param h (MODIFIED) - indicates whether the height has changed
+     * @param p (MODIFIED) pointer to an AVL node
+     * @param q (MODIFIED) pointer to another AVL node
+     * @param h (MODIFIED) indicates whether the height has changed
      */
 private:
     static void removeLeft( node<K, V>*& p, node<K, V>*& q, bool& h) {
@@ -369,9 +342,9 @@ private:
      * This method replaces the node to be deleted with
      * the rightmost node of the left subtree.
      *
-     * @param p (MODIFIED) - pointer to an AVL node
-     * @param p (MODIFIED) - pointer to another AVL node
-     * @param h (MODIFIED) - indicates whether the height has changed
+     * @param p (MODIFIED) pointer to an AVL node
+     * @param q (MODIFIED) pointer to another AVL node
+     * @param h (MODIFIED) indicates whether the height has changed
      */
 private:
     static void removeRight( node<K, V>*& p, node<K, V>*& q, bool& h ) {
@@ -394,9 +367,9 @@ private:
      * This method removes a node from the tree, then
      * rebalances recursively by backtracking up the tree
      *
-     * @param p (MODIFIED) - pointer to an AVL node
-     * @param x (IN) - the key
-     * @param h (MODIFIED) - indicates whether the height has changed
+     * @param p (MODIFIED) pointer to an AVL node
+     * @param x (IN) the key
+     * @param h (MODIFIED) indicates whether the height has changed
      *
      * @return true if node existed; otherwise, false;
      */
@@ -454,8 +427,8 @@ public:
     /*
      * This method searches the AVL tree for the existence of a key.
      *
-     * @param p (IN) - pointer to an AVL node
-     * @param x (IN) - the key
+     * @param p (IN) pointer to an AVL node
+     * @param x (IN) the key
      *
      * @return a pointer to the node if key is found; otherwise nullptr
      */
@@ -477,7 +450,7 @@ public:
     /*
      * This method counts every node in the AVL tree.
      *
-     * @param p (IN) - pointer to an AVL node
+     * @param p (IN) pointer to an AVL node
      *
      * @return the number of nodes in the AVL tree
      */
@@ -503,7 +476,7 @@ public:
     /*
      * This method counts every byte in the AVL tree.
      *
-     * @param p (IN) - pointer to an AVL node
+     * @param p (IN) pointer to an AVL node
      *
      * @return the number of nodes in the AVL tree
      */
@@ -531,7 +504,7 @@ public:
      * nodes ins the tree have been deleted via calls to remove,
      * this method will do nothing.
      *
-     * @param p (IN) - pointer to an AVL node
+     * @param p (IN) pointer to an AVL node
      */
 public:
     static void deleteTree( node<K, V>* p ) {

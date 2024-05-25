@@ -33,7 +33,11 @@
  * 4.63 (p. 220) and 4.64 (p. 223) of Nicklaus Wirth's textbook,
  * "Algorithms + Data Structures = Programs" with correction
  * of the bug in the del procedure and bifurcation of that
- * procedure into the eraseLeft and eraseRight methods.
+ * procedure into the eraseLeft and eraseRight methods.  The
+ * eraseRight method performs the identical operations to del,
+ * whereas the eraseLeft method performs the mirror-image
+ * operations to eraseRight in an attempt to improve rebalancing
+ * efficiency after deletion.
  *
  * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_TREE avlTree.cpp
  */
@@ -65,9 +69,8 @@ class avlTree {
          *
          * Calling parameters:
          * 
-         * x - the key to store in the avlNode
-         * h - passed by reference and assigned true to
-         *     specify that the tree height has changed
+         * @param x (IN) the key to store in the avlNode
+         * @param h (MODIFIED) specifies that the tree height has changed
          */
     public:
         avlNode( T const& x, bool& h ) {
@@ -86,16 +89,16 @@ class avlTree {
          * 
          * Calling parameter:
          *
-         * x - the key to search for
+         * @param x (IN) the key to search for
          * 
-         * return - true if the key was found; otherwise, false
+         * @return true if the key was found; otherwise, false
          */
     public:
         bool contains( T const& x) {
             
             avlNode* p = this;
             
-            while ( p != nullptr ) {
+            while ( p != nullptr ) {                    /* iterate; don't use recursion */
                 if ( x < p->key ) {
                     p = p->left;                        /* follow the left branch */
                 } else if ( x > p->key ) {
@@ -119,13 +122,11 @@ class avlTree {
          *
          * Calling parameters:
          *
-         * x - the key to add to the tree
-         * h - if true, the height of the tree has changed;
-         *     passed by reference and modified
-         * a - if true, the key was added as a new avlNode;
-         *     passed by reference and modified
+         * @param x (IN) the key to add to the tree
+         * @param h (MODIFIED) if true, the height of the tree has changed
+         * @param a (MODIFIED) if true, the key was added as a new avlNode
          * 
-         * return - the root of the rebalanced sub-tree
+         * @return the root of the rebalanced sub-tree
          */
     public:
         avlNode* insert( T const& x, bool& h, bool& a ) {
@@ -242,10 +243,9 @@ class avlTree {
          * 
          * Calling parameter:
          * 
-         * h - if true, the height of the tree has changed;
-         *     passed by reference and modified
+         * @param h (MODIFIED) if true, the height of the tree has changed
          * 
-         * return - the root of the rebalanced sub-tree
+         * @return the root of the rebalanced sub-tree
          */
     private:
         avlNode* balanceLeft( bool& h ) {
@@ -308,10 +308,9 @@ class avlTree {
          * 
          * Calling parameter:
          * 
-         * h - if true, the height of the tree has changed;
-         *     passed by reference and modified
+         * @param h (MODIFIED) if true, the height of the tree has changed
          * 
-         * return - the root of the rebalanced sub-tree
+         * @return the root of the rebalanced sub-tree
          */
     private:
         avlNode* balanceRight( bool& h ) {
@@ -375,12 +374,10 @@ class avlTree {
          * 
          * Calling parameters:
          * 
-         * q - the avlNode to be deleted;
-         *     passed by reference and modified
-         * h - if true, the height of the tree has changed;
-         *     passed by reference and modified
+         * @param q (MODIFIED) the avlNode to be deleted
+         * @param h (MODIFIED) if true, the height of the tree has changed
          * 
-         * return - the root of the rebalanced sub-tree
+         * @return the root of the rebalanced sub-tree
          */
      private:
         avlNode* eraseLeft( avlNode*& q, bool& h ) {
@@ -411,12 +408,10 @@ class avlTree {
          * 
          * Calling parameters:
          * 
-         * q - the avlNode to be deleted;
-         *     passed by reference and modified
-         * h - if true, the height of the tree has changed;
-         *     passed by reference and modified
+         * @param q (MODIFIED) the avlNode to be deleted
+         * @param h (MODIFIED) if true, the height of the tree has changed
          * 
-         * return - the root of the rebalanced sub-tree
+         * @return the root of the rebalanced sub-tree
          */
     private:
         avlNode* eraseRight( avlNode*& q, bool& h ) {
@@ -446,13 +441,11 @@ class avlTree {
          * 
          * Calling parameters:
          * 
-         * x - the key to remove from the tree
-         * h - if true, the height of the tree has changed;
-         *     passed by reference and modified
-         * r - if true, the key was removed from the tree;
-         *     passed by reference and modified
+         * @param x (IN) the key to remove from the tree
+         * @param h (MODIFIED) if true, the height of the tree has changed
+         * @param r (MODIFIED) if true, the key was removed from the tree
          * 
-         * return - the root of the rebalanced sub-tree
+         * @return the root of the rebalanced sub-tree
         */
      public:
         avlNode* erase( T const& x, bool& h, bool& r ) {
@@ -488,7 +481,7 @@ class avlTree {
                     p = p->right;
                     h = true;
                 } else {
-                    switch ( p->bal ) {             /* otherwise find a avlNode to remove */
+                    switch ( p->bal ) {             /* otherwise find an avlNode to remove */
                         case 0: case -1:            /* left or neither subtree is deeper */
                             p->left = p->left->eraseRight( q, h );
                             if ( h == true ) {
@@ -516,7 +509,7 @@ class avlTree {
          * 
          * Calling parameter:
          * 
-         * d - the depth in the tree
+         * @param d (MODIFIED) the depth in the tree
          */
     public:
         void printTree( int d ) {
@@ -557,10 +550,8 @@ class avlTree {
          *
          * Calling parameters:
          * 
-         * v - a vector of the keys;
-         *     passed by reference and modified
-         * i - an index to the next unoccupied vector element;
-         *     passed by reference and modified
+         * @param v (MODIFIED) vector of the keys
+         * @param i (MODIFIED) index to the next unoccupied vector element
          */       
     public:
         void getKeys( vector<T>& v, size_t& i ) {
@@ -631,9 +622,9 @@ public:
      *
      * Calling parameter:
      *
-     * x - the key to add to the tree
+     * @param x (IN) the key to add to the tree
      * 
-     * return - true if the key was added as a new avlNode; otherwise, false
+     * @return true if the key was added as a new avlNode; otherwise, false
      */
 public:
     bool insert( T const& x ) {
@@ -659,9 +650,9 @@ public:
      * 
      * Calling parameter:
      * 
-     * x - the key to remove from the tree
+     * @param x (IN) the key to remove from the tree
      * 
-     * return - true if the key was removed from the tree; otherwise, false
+     * @return true if the key was removed from the tree; otherwise, false
      */
 public:
     bool erase( T const& x ) {
@@ -696,8 +687,7 @@ public:
      *
      * Calling parameter:
      * 
-     * v - a vector of the keys;
-     *     passed by reference and modified
+     * @param v (MODIFIED) vector of the keys
      */
 public:
     void getKeys( vector<T>& v ) {
