@@ -39,7 +39,7 @@
  * to removeRight in an attempt to improve rebalancing efficiency
  * after deletion.
  * 
- * To build the test executable, compile via: g++ -O3 avlMap.cpp
+ * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_MAP avlMap.cpp
  */
 
 #include <limits.h>
@@ -526,15 +526,15 @@ public:
     }
 };
 
-// A basic test:
-// compile for linux via 'g++ -lm -lrt -O3 avlMap.cc'
-// compile for mach via 'g++ -lm -O3 -DMACH avlMap.cc'
+#ifdef TEST_AVL_MAP
+
+// A basic test
 int main(int argc, char **argv) {
     
     struct timespec startTime, endTime;
     int size = 1000000;
 
-    for (uint32_t i = 1; i < argc; ++i) {
+    for (size_t i = 1; i < argc; ++i) {
         if ( 0 == strcmp(argv[i], "-s") || 0 == strcmp(argv[i], "--size") ) {
             size = atol(argv[++i]);
             continue;
@@ -552,7 +552,7 @@ int main(int argc, char **argv) {
     // Create some unique unsigned integers
     std::set<uint32_t> numberSet;
     srand(1);
-    for (uint32_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; ++i) {
         uint32_t number =  (uint32_t)floor( (double)UINT_MAX * (double)rand() / (double)RAND_MAX );
         numberSet.insert(number);
     }
@@ -578,23 +578,15 @@ int main(int argc, char **argv) {
     node<string, uint32_t>* stringRoot = nullptr;
     bool h = false;
 
-#ifdef MACH
-    startTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &startTime);
-#endif
 
-    for (uint32_t i = 0; i < dictionary.size(); i++) {
+    for (size_t i = 0; i < dictionary.size(); ++i) {
         if (node<string, uint32_t>::addNode( stringRoot, dictionary[i], i, h )) {
             fprintf(stderr, "key %s already in string tree\n", dictionary[i].c_str());
         }
     }
 
-#ifdef MACH
-    endTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &endTime);
-#endif
     double createTime = (endTime.tv_sec - startTime.tv_sec) +
 	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
 
@@ -610,13 +602,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "create time = %.4f seconds\n", createTime);
 
     // Search for each word in the AVL tree
-#ifdef MACH
-    startTime = mach_gettime();
-#else
-    clock_gettime(CLOCK_REALTIME, &startTime);
-#endif
+   clock_gettime(CLOCK_REALTIME, &startTime);
 
-    for (uint32_t i = 0; i < dictionary.size(); i++) {
+    for (size_t i = 0; i < dictionary.size(); ++i) {
         uint32_t const* val = node<string, uint32_t>::findNode( stringRoot, dictionary[i] );
         if (val == nullptr) {
             fprintf(stderr, "key %s not in string tree for search\n", dictionary[i].c_str());
@@ -625,32 +613,21 @@ int main(int argc, char **argv) {
         }
     }
 
-#ifdef MACH
-    endTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &endTime);
-#endif
     double searchTime = (endTime.tv_sec - startTime.tv_sec) +
 	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
     fprintf(stderr, "search time = %.4f seconds\n", searchTime);
 
     // Delete each word from the AVL tree
-#ifdef MACH
-    startTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &startTime);
-#endif
 
-    for (uint32_t i = 0; i < dictionary.size(); i++) {
+    for (ssize_t i = 0; i < dictionary.size(); ++i) {
         if (!node<string, uint32_t>::removeNode( stringRoot, dictionary[i], h )) {
             fprintf(stderr, "string key %s not in tree for deletion\n", dictionary[i].c_str());
         }
     }
-#ifdef MACH
-    endTime = mach_gettime();
-#else
+
     clock_gettime(CLOCK_REALTIME, &endTime);
-#endif
     double deleteTime = (endTime.tv_sec - startTime.tv_sec) +
 	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
     fprintf(stderr, "delete time = %.4f seconds\n", deleteTime);
@@ -665,11 +642,7 @@ int main(int argc, char **argv) {
     node<uint32_t, uint32_t>* integerRoot = nullptr;
     h = false;
 
-#ifdef MACH
-    startTime = mach_gettime();
-#else
-    clock_gettime(CLOCK_REALTIME, &startTime);
-#endif
+   clock_gettime(CLOCK_REALTIME, &startTime);
 
     for (size_t i = 0; i < numbers.size(); i++) {
         if (node<uint32_t, uint32_t>::addNode( integerRoot, numbers[i], i, h )) {
@@ -677,11 +650,7 @@ int main(int argc, char **argv) {
         }
     }
 
-#ifdef MACH
-    endTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &endTime);
-#endif
     createTime = (endTime.tv_sec - startTime.tv_sec) +
 	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
 
@@ -712,21 +681,13 @@ int main(int argc, char **argv) {
         }
     }
 
-#ifdef MACH
-    endTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &endTime);
-#endif
     searchTime = (endTime.tv_sec - startTime.tv_sec) +
 	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
     fprintf(stderr, "search time = %.4f seconds\n", searchTime);
 
     // Delete each word from the AVL tree
-#ifdef MACH
-    startTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &startTime);
-#endif
 
     for (size_t i = 0; i < numbers.size(); i++) {
         if (!node<uint32_t, uint32_t>::removeNode( integerRoot, numbers[i], h )) {
@@ -734,11 +695,7 @@ int main(int argc, char **argv) {
         }
     }
 
-#ifdef MACH
-    endTime = mach_gettime();
-#else
     clock_gettime(CLOCK_REALTIME, &endTime);
-#endif
     deleteTime = (endTime.tv_sec - startTime.tv_sec) +
 	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
     fprintf(stderr, "delete time = %.4f seconds\n", deleteTime);
@@ -751,3 +708,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+#endif
