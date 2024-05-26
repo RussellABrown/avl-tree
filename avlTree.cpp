@@ -628,20 +628,17 @@ public:
      */
 public:
     bool insert( T const& x ) {
-        bool h = false, a = false;
+        bool h = false, a = true;
         if ( root != nullptr ) {
             root = root->insert( x, h, a );
             if ( a == true ) {
                 ++count;
-                return true;
-            } else {
-                return false;
             }
         } else {
             root = new avlNode( x, h );
             ++count;
-            return true;
         }
+        return a;
     }
 
     /*
@@ -661,13 +658,9 @@ public:
             root = root->erase( x, h, r );
             if ( r == true ) {
                 --count;
-                return true;
-            } else {
-                return false;
             }
-        } else {
-            return false;
         }
+        return r;
     }
 
     /*
