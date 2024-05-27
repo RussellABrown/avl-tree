@@ -57,8 +57,13 @@
 #include <vector>
 
 using std::logic_error;
+using std::random_shuffle;
+using std::set;
 using std::string;
 using std::vector;
+
+// for rotation statistics
+static size_t ll, lr, rl, rr;
 
 // an AVL node
 template <typename K, typename V>
@@ -218,6 +223,7 @@ private:
                 p1 = p->right;
                 b1 = p1->bal;
                 if ( b1 >= 0 ) {        // Single RR rotation
+                    ++rr;
                     p->right = p1->left;
                     p1->left = p;
                     if ( b1 == 0 ) {
@@ -230,6 +236,7 @@ private:
                     }
                     p = p1;
                 } else {                // Double RL rotation
+                    ++rl;
                     p2 = p1->left;
                     b2 = p2->bal;
                     p1->left = p2->right;
@@ -280,6 +287,7 @@ private:
                 p1 = p->left;
                 b1 = p1->bal;
                 if ( b1 <= 0 ) {        // Single LL rotation
+                    ++ll;
                     p->left = p1->right;
                     p1->right = p;
                     if ( b1 == 0 ) {
@@ -292,6 +300,7 @@ private:
                     }
                     p = p1;
                 } else {                // Double LR rotation
+                    ++lr;
                     p2 = p1->right;
                     b2 = p2->bal;
                     p1->right = p2->left;
@@ -534,7 +543,7 @@ public:
 int main(int argc, char **argv) {
     
     struct timespec startTime, endTime;
-    int size = 1000000, iterations = 10;
+    int size = 250000, iterations = 10;
 
     for (size_t i = 1; i < argc; ++i) {
         if ( 0 == strcmp(argv[i], "-s") || 0 == strcmp(argv[i], "--size") ) {
@@ -551,18 +560,18 @@ int main(int argc, char **argv) {
         exit(1);
     }
     
-    // Create some unique unsigned integers
-    std::set<uint32_t> numberSet;
+    // Create a vector of unique unsigned integers and shuffle them.
+    set<uint32_t> numberSet;
     srand(1);
     for (size_t i = 0; i < size; ++i) {
         uint32_t number =  (uint32_t)floor( (double)UINT_MAX * (double)rand() / (double)RAND_MAX );
         numberSet.insert(number);
     }
-
     // Add the integers to a vector
     vector<uint32_t> numbers(numberSet.begin(), numberSet.end());
+    random_shuffle(numbers.begin(), numbers.end());
 
-    // Read the words file into a dictionary    
+    // Read the words file into a dictionary and shuffle them. 
     vector<string> dictionary;
     char buf[512];
     FILE *f = fopen("words.txt", "r");
@@ -572,19 +581,14 @@ int main(int argc, char **argv) {
         dictionary.push_back(string(buf));
     }
     fclose(f);
+    random_shuffle(dictionary.begin(), dictionary.end());
 
-    // Shuffle the words
-    std::random_shuffle(dictionary.begin(), dictionary.end());
-
-    // Initialize the time sums.
+    // Obtain statistics for an AVL tree that has a string key.
+    ll = lr = rl = rr = 0;
+    size_t stringTreeSize, stringNodes;
     double createStringTime = 0, searchStringTime = 0, deleteStringTime = 0;
-    double createIntegerTime = 0, searchIntegerTime = 0, deleteIntegerTime = 0;
+     for (size_t it = 0; it < iterations; ++it) {
 
-    // Iterate the tests for better statistics.
-    size_t stringTreeSize, stringNodes, integerTreeSize;
-    for (size_t it = 0; it < iterations; ++it) {
-
-        // Create an AVL tree that has a string key
 
         node<string, uint32_t>* stringRoot = nullptr;
         bool h = false;
@@ -643,10 +647,25 @@ int main(int argc, char **argv) {
         if (treeSize != 0) {
             fprintf(stderr, "%lu nodes remain in string tree following deletion\n", treeSize);
         }
+    }
 
-        // Create an AVL tree that has an integer key
+    // Report the string tree statistics.
+    fprintf(stderr, "number of words in string tree = %lu  bytes = %lu  bytes/word = %.2f\n",
+            stringTreeSize, stringNodes,(double)stringNodes/(double)stringTreeSize);
+    fprintf(stderr, "create string time = %.4f seconds\n", createStringTime/(double)iterations);
+    fprintf(stderr, "search string time = %.4f seconds\n", searchStringTime/(double)iterations);
+    fprintf(stderr, "delete string time = %.4f seconds\n", deleteStringTime/(double)iterations);
+    fprintf(stderr, "string LL = %zu  LR = %zu  RL = %zu  RR = %zu\n",
+            ll/iterations, lr/iterations, rl/iterations, rr/iterations);
+
+    // Obtain statisitics for an AVL tree that has an integer key.
+    ll = lr = rl = rr = 0;
+    size_t integerTreeSize;
+    double createIntegerTime = 0, searchIntegerTime = 0, deleteIntegerTime = 0;
+    for (size_t it = 0; it < iterations; ++it) {
+
         node<uint32_t, uint32_t>* integerRoot = nullptr;
-        h = false;
+        bool h = false;
 
         clock_gettime(CLOCK_REALTIME, &startTime);
 
@@ -697,24 +716,21 @@ int main(int argc, char **argv) {
         1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
 
         // Verify that the tree is empty
-        treeSize = node<uint32_t, uint32_t>::countNodes(integerRoot);
+        size_t treeSize = node<uint32_t, uint32_t>::countNodes(integerRoot);
         if (treeSize != 0) {
             fprintf(stderr, "%lu nodes remain in integer tree following deletion\n", treeSize);
         }
     }
 
-    // Report the statistics.
-    fprintf(stderr, "number of words in string tree = %lu  bytes = %lu  bytes/word = %.2f\n",
-            stringTreeSize, stringNodes,(double)stringNodes/(double)stringTreeSize);
-    fprintf(stderr, "create string time = %.4f seconds\n", createStringTime/(double)iterations);
-    fprintf(stderr, "search string time = %.4f seconds\n", searchStringTime/(double)iterations);
-    fprintf(stderr, "delete string time = %.4f seconds\n", deleteStringTime/(double)iterations);
+    // Report the integer statistics.
     fprintf(stderr, "number of integers in integer tree = %lu  bytes = %lu  bytes/integer = %.2f\n",
             integerTreeSize, integerTreeSize * sizeof(node<uint32_t, uint32_t>),
             (double)sizeof(node<uint32_t, uint32_t>));
     fprintf(stderr, "create integer time = %.4f seconds\n", createIntegerTime/(double)iterations);
     fprintf(stderr, "search integer time = %.4f seconds\n", searchIntegerTime/(double)iterations);
     fprintf(stderr, "delete integer time = %.4f seconds\n", deleteIntegerTime/(double)iterations);
+    fprintf(stderr, "integer LL = %zu  LR = %zu  RL = %zu  RR = %zu\n",
+            ll/iterations, lr/iterations, rl/iterations, rr/iterations);
 
     return 0;
 }
