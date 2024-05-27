@@ -56,7 +56,9 @@
 #include <stdexcept>
 #include <vector>
 
-using namespace std;
+using std::logic_error;
+using std::string;
+using std::vector;
 
 // an AVL node
 template <typename K, typename V>
@@ -532,7 +534,7 @@ public:
 int main(int argc, char **argv) {
     
     struct timespec startTime, endTime;
-    int size = 1000000;
+    int size = 1000000, iterations = 10;
 
     for (size_t i = 1; i < argc; ++i) {
         if ( 0 == strcmp(argv[i], "-s") || 0 == strcmp(argv[i], "--size") ) {
@@ -574,137 +576,145 @@ int main(int argc, char **argv) {
     // Shuffle the words
     std::random_shuffle(dictionary.begin(), dictionary.end());
 
-    // Create an AVL tree that has a string key
-    node<string, uint32_t>* stringRoot = nullptr;
-    bool h = false;
+    // Initialize the time sums.
+    double createStringTime = 0, searchStringTime = 0, deleteStringTime = 0;
+    double createIntegerTime = 0, searchIntegerTime = 0, deleteIntegerTime = 0;
 
-    clock_gettime(CLOCK_REALTIME, &startTime);
+    // Iterate the tests for better statistics.
+    size_t stringTreeSize, stringNodes, integerTreeSize;
+    for (size_t it = 0; it < iterations; ++it) {
 
-    for (size_t i = 0; i < dictionary.size(); ++i) {
-        if (node<string, uint32_t>::addNode( stringRoot, dictionary[i], i, h )) {
-            fprintf(stderr, "key %s already in string tree\n", dictionary[i].c_str());
+        // Create an AVL tree that has a string key
+
+        node<string, uint32_t>* stringRoot = nullptr;
+        bool h = false;
+
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        for (size_t i = 0; i < dictionary.size(); ++i) {
+            if (node<string, uint32_t>::addNode( stringRoot, dictionary[i], i, h )) {
+                fprintf(stderr, "key %s already in string tree\n", dictionary[i].c_str());
+            }
+        }
+
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        createStringTime += (endTime.tv_sec - startTime.tv_sec) +
+        1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
+
+        // Verify that the correct number of nodes were added to the tree
+        stringTreeSize = node<string, uint32_t>::countNodes(stringRoot);
+        stringNodes = node<string, uint32_t>::countBytesForStringNodes(stringRoot);
+        if (stringTreeSize != dictionary.size()) {
+            fprintf(stderr, "expected size for string tree %lu differs from actual size %lu\n",
+                    stringTreeSize, dictionary.size());
+        }
+
+        // Search for each word in the AVL tree
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        for (size_t i = 0; i < dictionary.size(); ++i) {
+            uint32_t const* val = node<string, uint32_t>::findNode( stringRoot, dictionary[i] );
+            if (val == nullptr) {
+                fprintf(stderr, "key %s not in string tree for search\n", dictionary[i].c_str());
+            } else if (*val != i) {
+                fprintf(stderr, "wrong value %d for string key %s\n", *val, dictionary[i].c_str());
+            }
+        }
+
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        searchStringTime += (endTime.tv_sec - startTime.tv_sec) +
+        1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
+
+        // Delete each word from the AVL tree
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        for (size_t i = 0; i < dictionary.size(); ++i) {
+            if (!node<string, uint32_t>::removeNode( stringRoot, dictionary[i], h )) {
+                fprintf(stderr, "string key %s not in tree for deletion\n", dictionary[i].c_str());
+            }
+        }
+
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        deleteStringTime += (endTime.tv_sec - startTime.tv_sec) +
+        1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
+
+        // Verify that the tree is empty
+        size_t treeSize = node<string, uint32_t>::countNodes(stringRoot);
+        if (treeSize != 0) {
+            fprintf(stderr, "%lu nodes remain in string tree following deletion\n", treeSize);
+        }
+
+        // Create an AVL tree that has an integer key
+        node<uint32_t, uint32_t>* integerRoot = nullptr;
+        h = false;
+
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        for (size_t i = 0; i < numbers.size(); i++) {
+            if (node<uint32_t, uint32_t>::addNode( integerRoot, numbers[i], i, h )) {
+            fprintf(stderr, "key %d already in tree\n", numbers[i]);
+            }
+        }
+
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        createIntegerTime += (endTime.tv_sec - startTime.tv_sec) +
+        1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
+
+        // Verify that the correct number of nodes were added to the tree
+        integerTreeSize = node<uint32_t, uint32_t>::countNodes(integerRoot);
+        if (integerTreeSize != numbers.size()) {
+            fprintf(stderr, "expected size for integer tree %lu differs from actual size %lu\n",
+                    integerTreeSize, numbers.size());
+        }
+
+        // Search for each word in the AVL tree
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        for (size_t i = 0; i < numbers.size(); i++) {
+            uint32_t const* val = node<uint32_t, uint32_t>::findNode( integerRoot, numbers[i] );
+            if (val == nullptr) {
+            fprintf(stderr, "key %d not in integer tree for search\n", numbers[i]);
+            } else if (*val != i) {
+                fprintf(stderr, "wrong value %d for key %d\n", *val, numbers[i]);
+            }
+        }
+
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        searchIntegerTime += (endTime.tv_sec - startTime.tv_sec) +
+        1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
+
+        // Delete each word from the AVL tree
+        clock_gettime(CLOCK_REALTIME, &startTime);
+
+        for (size_t i = 0; i < numbers.size(); i++) {
+            if (!node<uint32_t, uint32_t>::removeNode( integerRoot, numbers[i], h )) {
+            fprintf(stderr, "integer key %d not in tree for deletion\n", numbers[i]);
+            }
+        }
+
+        clock_gettime(CLOCK_REALTIME, &endTime);
+        deleteIntegerTime += (endTime.tv_sec - startTime.tv_sec) +
+        1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
+
+        // Verify that the tree is empty
+        treeSize = node<uint32_t, uint32_t>::countNodes(integerRoot);
+        if (treeSize != 0) {
+            fprintf(stderr, "%lu nodes remain in integer tree following deletion\n", treeSize);
         }
     }
 
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    double createTime = (endTime.tv_sec - startTime.tv_sec) +
-	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
-
-    // Verify that the correct number of nodes were added to the tree
-    size_t treeSize = node<string, uint32_t>::countNodes(stringRoot);
-    if (treeSize != dictionary.size()) {
-        fprintf(stderr, "expected size for string tree %lu differs from actual size %lu\n",
-              treeSize, dictionary.size());
-    }
-    fprintf(stderr, "number of words = %lu  bytes = %lu  bytes/word = %.2f\n",
-            treeSize, node<string, uint32_t>::countBytesForStringNodes(stringRoot),
-            (double)node<string, uint32_t>::countBytesForStringNodes(stringRoot)/(double)treeSize);
-    fprintf(stderr, "create time = %.4f seconds\n", createTime);
-
-    // Search for each word in the AVL tree
-   clock_gettime(CLOCK_REALTIME, &startTime);
-
-    for (size_t i = 0; i < dictionary.size(); ++i) {
-        uint32_t const* val = node<string, uint32_t>::findNode( stringRoot, dictionary[i] );
-        if (val == nullptr) {
-            fprintf(stderr, "key %s not in string tree for search\n", dictionary[i].c_str());
-        } else if (*val != i) {
-            fprintf(stderr, "wrong value %d for string key %s\n", *val, dictionary[i].c_str());
-        }
-    }
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    double searchTime = (endTime.tv_sec - startTime.tv_sec) +
-	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
-    fprintf(stderr, "search time = %.4f seconds\n", searchTime);
-
-    // Delete each word from the AVL tree
-    clock_gettime(CLOCK_REALTIME, &startTime);
-
-    for (ssize_t i = 0; i < dictionary.size(); ++i) {
-        if (!node<string, uint32_t>::removeNode( stringRoot, dictionary[i], h )) {
-            fprintf(stderr, "string key %s not in tree for deletion\n", dictionary[i].c_str());
-        }
-    }
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    double deleteTime = (endTime.tv_sec - startTime.tv_sec) +
-	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
-    fprintf(stderr, "delete time = %.4f seconds\n", deleteTime);
-
-    // Verify that the tree is empty
-    treeSize = node<string, uint32_t>::countNodes(stringRoot);
-    if (treeSize != 0) {
-        fprintf(stderr, "%lu nodes remain in string tree following deletion\n", treeSize);
-    }
-
-    // Create an AVL tree that has an integer key
-    node<uint32_t, uint32_t>* integerRoot = nullptr;
-    h = false;
-
-   clock_gettime(CLOCK_REALTIME, &startTime);
-
-    for (size_t i = 0; i < numbers.size(); i++) {
-        if (node<uint32_t, uint32_t>::addNode( integerRoot, numbers[i], i, h )) {
-          fprintf(stderr, "key %d already in tree\n", numbers[i]);
-        }
-    }
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    createTime = (endTime.tv_sec - startTime.tv_sec) +
-	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
-
-    // Verify that the correct number of nodes were added to the tree
-    treeSize = node<uint32_t, uint32_t>::countNodes(integerRoot);
-    if (treeSize != numbers.size()) {
-        fprintf(stderr, "expected size for integer tree %lu differs from actual size %lu\n",
-              treeSize, numbers.size());
-    }
-    fprintf(stderr, "number of integers = %lu  bytes = %lu  bytes/integer = %.2f\n",
-            treeSize, treeSize * sizeof(node<uint32_t, uint32_t>),
+    // Report the statistics.
+    fprintf(stderr, "number of words in string tree = %lu  bytes = %lu  bytes/word = %.2f\n",
+            stringTreeSize, stringNodes,(double)stringNodes/(double)stringTreeSize);
+    fprintf(stderr, "create string time = %.4f seconds\n", createStringTime/(double)iterations);
+    fprintf(stderr, "search string time = %.4f seconds\n", searchStringTime/(double)iterations);
+    fprintf(stderr, "delete string time = %.4f seconds\n", deleteStringTime/(double)iterations);
+    fprintf(stderr, "number of integers in integer tree = %lu  bytes = %lu  bytes/integer = %.2f\n",
+            integerTreeSize, integerTreeSize * sizeof(node<uint32_t, uint32_t>),
             (double)sizeof(node<uint32_t, uint32_t>));
-    fprintf(stderr, "create time = %.4f seconds\n", createTime);
-
-    // Search for each word in the AVL tree
-#ifdef MACH
-    startTime = mach_gettime();
-#else
-    clock_gettime(CLOCK_REALTIME, &startTime);
-#endif
-
-    for (size_t i = 0; i < numbers.size(); i++) {
-        uint32_t const* val = node<uint32_t, uint32_t>::findNode( integerRoot, numbers[i] );
-        if (val == nullptr) {
-          fprintf(stderr, "key %d not in integer tree for search\n", numbers[i]);
-        } else if (*val != i) {
-            fprintf(stderr, "wrong value %d for key %d\n", *val, numbers[i]);
-        }
-    }
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    searchTime = (endTime.tv_sec - startTime.tv_sec) +
-	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
-    fprintf(stderr, "search time = %.4f seconds\n", searchTime);
-
-    // Delete each word from the AVL tree
-    clock_gettime(CLOCK_REALTIME, &startTime);
-
-    for (size_t i = 0; i < numbers.size(); i++) {
-        if (!node<uint32_t, uint32_t>::removeNode( integerRoot, numbers[i], h )) {
-          fprintf(stderr, "integer key %d not in tree for deletion\n", numbers[i]);
-        }
-    }
-
-    clock_gettime(CLOCK_REALTIME, &endTime);
-    deleteTime = (endTime.tv_sec - startTime.tv_sec) +
-	1.0e-9 * ((double)(endTime.tv_nsec - startTime.tv_nsec));
-    fprintf(stderr, "delete time = %.4f seconds\n", deleteTime);
-
-    // Verify that the tree is empty
-    treeSize = node<uint32_t, uint32_t>::countNodes(integerRoot);
-    if (treeSize != 0) {
-        fprintf(stderr, "%lu nodes remain in string tree following deletion\n", treeSize);
-    }
+    fprintf(stderr, "create integer time = %.4f seconds\n", createIntegerTime/(double)iterations);
+    fprintf(stderr, "search integer time = %.4f seconds\n", searchIntegerTime/(double)iterations);
+    fprintf(stderr, "delete integer time = %.4f seconds\n", deleteIntegerTime/(double)iterations);
 
     return 0;
 }
