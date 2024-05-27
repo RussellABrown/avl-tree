@@ -43,10 +43,12 @@
  */
 
 #include <iostream>
-#include <list>
 #include <vector>
 
-using namespace std;
+using std::cin;
+using std::cout;
+using std::endl;
+using std::vector;
 
 /*
  * The avlTree class defines the root of the AVL tree as well as the avlNode class.
@@ -528,7 +530,7 @@ class avlTree {
         /*
          * This method deletes every avlNode in the tree.  If the
          * tree has been completely deleted via prior calls to the
-         * erase() method, the ~tree() destructor will not call
+         * erase() method, the ~avlTree() destructor will not call
          * this method.
          */
     public:
@@ -581,8 +583,6 @@ public:
         if ( root != nullptr ) {
             root->clear();
         }
-        root = nullptr;
-        count = 0;
     }
 
     /* This method returns the number of avlNodes in the tree. */
@@ -675,6 +675,16 @@ public:
         }
     }
 
+    /* This method deletes every avlNode in the AVL tree. */
+public:
+    void clear() {
+        if ( root != nullptr ) {
+            root->clear();
+        }
+        root = nullptr;
+        count = 0;
+    }
+
     /*
      * This method walks the tree in order and stores each key in a vector.
      *
@@ -701,7 +711,7 @@ int main() {
 
    /* Present and missing keys */
 
-    int const presentKey = 13, missingKey = 0;
+    int const presentKey = 13, duplicatekey = 14, missingKey = 0;
     
     char ch;
     avlTree<int>* t = new avlTree<int>();
@@ -711,10 +721,13 @@ int main() {
     for ( size_t i = 0; i < keys.size(); ++i ) {
         cout << endl << "press return to add " << keys[i] << endl;
         ch = cin.get();
-        t->insert( keys[i] );
+        if ( t->insert(keys[i]) == false && keys[i] != duplicatekey ) {
+            cout << "error: failure to insert key " << keys[i] << endl;
+        }
         cout << "tree contains " << t->size() << " nodes" << endl << endl;
         t->printTree();
     }
+
     cout << endl << "*** balanced tree completed; ordered keys follow ***" << endl << endl;
 
     /*
@@ -732,16 +745,16 @@ int main() {
     /* Test the contains() function. */
 
     if ( t->contains( presentKey ) == false ) {
-        cout << endl << "error: failed to find key " << presentKey << endl;
+        cout << endl << "error: does not contain key " << presentKey << endl;
     }
     if ( t->contains( missingKey ) == true ) {
-        cout << endl << "error: found key " << missingKey << endl;
+        cout << endl << "error: contains missing key " << missingKey << endl;
     }
 
     /* Test the erase() function for a missing key. */
 
     if ( t->erase( missingKey ) == true ) {
-        cout << endl << "error: removed key " << missingKey << endl;
+        cout << endl << "error: erased missing key " << missingKey << endl;
     }
 
     /* Delete each key from the AVL tree. */
@@ -749,7 +762,9 @@ int main() {
     for ( size_t i = 0; i < keys.size(); ++i ) {
         cout << endl << "press return to remove " << keys[i] << endl;
         ch = cin.get();
-        t->erase( keys[i] );
+        if ( t->erase(keys[i]) == false && keys[i] != duplicatekey ) {
+            cout << "error: failure to erase key " << keys[i] << endl;
+        }
         cout << "tree contains " << t->size() << " nodes" << endl << endl;
         t->printTree();
     }
