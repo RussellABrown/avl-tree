@@ -43,11 +43,15 @@
  */
 
 #include <iostream>
+#include <exception>
+#include <sstream>
 #include <vector>
 
 using std::cin;
 using std::cout;
 using std::endl;
+using std::ostringstream;
+using std::runtime_error;
 using std::vector;
 
 /*
@@ -496,6 +500,12 @@ class avlTree {
                                 p = balanceRight( h );
                             }
                             break;
+                        default:
+                            {
+                                ostringstream buffer;
+                                buffer << endl << (p->bal) << " is out of range" << endl;
+                                throw runtime_error(buffer.str());
+                            }
                     }
                 }
                 delete q;

@@ -42,29 +42,32 @@
  * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_MAP avlMap.cpp
  */
 
-#include <limits.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
 #include <algorithm>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <exception>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <stdexcept>
 #include <vector>
 
 using std::cout;
 using std::endl;
-using std::logic_error;
+using std::ostringstream;
+using std::runtime_error;
+using std::setprecision;
 using std::random_shuffle;
 using std::string;
 using std::vector;
 
 /*
- * The avlMap class defines the root of the AVL map as well as the avlNode class.
+ * The avlMap class defines the root of the AVL map and provides the
+ * lli, lri, rli, rri, lle, lre, rle, and rre rotation counters
+ * for the avlNode class to record rotation statistics.
  */
 template <typename K, typename V>
 class avlMap {
@@ -170,8 +173,7 @@ class avlMap {
          *
          * Calling parameters:
          *
-         * @param m (IN) a pointer to the avlMap instance that is provided
-         *               in case incrementing ll, lr, rl, and rr is desired
+         * @param m (IN) a pointer to the avlMap instance
          * @param x (IN) the key to add to the map
          * @param y (IN) the value to add to the map
          * @param h (MODIFIED) if true, the height of the map has changed
@@ -179,7 +181,7 @@ class avlMap {
          *                     the (key, value) was inserted as a new avlNode
          */
     public:
-        avlNode* insert( avlMap* m, K const& x, V const& y, bool& h, bool& a ) {
+        avlNode* insert( avlMap* const m, K const& x, V const& y, bool& h, bool& a ) {
             
             avlNode* p = this;
             
@@ -202,11 +204,13 @@ class avlMap {
                         case -1:		                /* map must be rebalanced */
                             avlNode* p1 = p->left;
                             if ( p1->bal == -1 ) {		/* single LL rotation */
+                                m->lli++;
                                 p->left = p1->right;
                                 p1->right = p;
                                 p->bal = 0;
                                 p = p1;
                             } else {			        /* double LR rotation */
+                                m->lri++;
                                 avlNode* p2 = p1->right;
                                 p1->right = p2->left;
                                 p2->left = p1;
@@ -248,11 +252,13 @@ class avlMap {
                         case 1:                         /* map must be rebalanced */
                             avlNode* p1 = p->right;
                             if ( p1->bal == 1 ) {       /* single RR rotation */
+                                m->rri++;
                                 p->right = p1->left;
                                 p1->left = p;
                                 p->bal = 0;
                                 p = p1;
                             } else {                    /* double RL rotation */
+                                m->rli++;
                                 avlNode* p2 = p1->left;
                                 p1->left = p2->right;
                                 p2->right = p1;
@@ -299,7 +305,7 @@ class avlMap {
          * @return the root of the rebalanced sub-map
          */
     private:
-        avlNode* balanceLeft( avlMap* m, bool& h ) {
+        avlNode* balanceLeft( avlMap* const m, bool& h ) {
             
             avlNode* p = this;
             
@@ -314,7 +320,7 @@ class avlMap {
                 case 1:                     /* map must be rebalanced */
                     avlNode* p1 = p->right;
                     if ( p1->bal >= 0 ) {   /* single RR rotation */
-                        m->rr++;
+                        m->rre++;
                         p->right = p1->left;
                         p1->left = p;
                         if ( p1->bal == 0 ) {
@@ -327,7 +333,7 @@ class avlMap {
                         }
                         p = p1;
                     } else {				  /* double RL rotation */
-                        m->rl++;
+                        m->rle++;
                         avlNode* p2 = p1->left;
                         p1->left = p2->right;
                         p2->right = p1;
@@ -367,7 +373,7 @@ class avlMap {
          * @return the root of the rebalanced sub-map
          */
     private:
-        avlNode* balanceRight( avlMap* m, bool& h ) {
+        avlNode* balanceRight( avlMap* const m, bool& h ) {
             
             avlNode* p = this;
             
@@ -382,7 +388,7 @@ class avlMap {
                 case -1:                    /* map must be rebalanced */
                     avlNode* p1 = p->left;
                     if ( p1->bal <= 0 ) {   /* single LL rotation */
-                        m->ll++;
+                        m->lle++;
                         p->left = p1->right;
                         p1->right = p;
                         if ( p1->bal == 0 ) {
@@ -395,7 +401,7 @@ class avlMap {
                         }
                         p = p1;
                     } else {				  /* double LR rotation */
-                        m->lr++;
+                        m->lre++;
                         avlNode* p2 = p1->right;
                         p1->right = p2->left;
                         p2->left = p1;
@@ -437,7 +443,7 @@ class avlMap {
          * @return the root of the rebalanced sub-map
          */
      private:
-        avlNode* eraseLeft( avlMap* m, avlNode*& q, bool& h ) {
+        avlNode* eraseLeft( avlMap* const m, avlNode*& q, bool& h ) {
             
             avlNode* p = this;
             
@@ -472,7 +478,7 @@ class avlMap {
          * @return the root of the rebalanced sub-map
          */
     private:
-        avlNode* eraseRight( avlMap* m, avlNode*& q, bool& h ) {
+        avlNode* eraseRight( avlMap* const m, avlNode*& q, bool& h ) {
             
             avlNode* p = this;
             
@@ -507,7 +513,7 @@ class avlMap {
          * @return the root of the rebalanced sub-map
         */
      public:
-        avlNode* erase( avlMap* m, K const& x, bool& h, bool& r ) {
+        avlNode* erase( avlMap* const m, K const& x, bool& h, bool& r ) {
             
             avlNode* p = this;
             
@@ -553,6 +559,12 @@ class avlMap {
                                 p = balanceRight( m, h );
                             }
                             break;
+                        default:
+                            {
+                                ostringstream buffer;
+                                buffer << endl << (p->bal) << " is out of range" << endl;
+                                throw runtime_error(buffer.str());
+                            }
                     }
                 }
                 delete q;
@@ -630,12 +642,12 @@ private:
     size_t count;    /* the number of nodes in the map */
 
 public:
-    size_t ll, lr, rl, rr;  /* the rotation counters */
+    size_t lle, lre, rle, rre, lli, lri, rli, rri;  /* the rotation counters */
    
 public:
     avlMap() {
         root = nullptr;
-        ll = lr = rl = rr = count = 0;
+        lle = lre = rle = rre = lli = lri = rli = rri = count = 0;
     }
     
 public:
@@ -813,7 +825,9 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_REALTIME, &startTime);
         for (size_t i = 0; i < dictionary.size(); ++i) {
             if ( stringRoot.insert( dictionary[i], i ) == true ) {
-                fprintf(stderr, "key %s already in string tree\n", dictionary[i].c_str());
+                ostringstream buffer;
+                buffer << endl << "key " << dictionary[i] << " is already in string tree" << endl;
+                throw runtime_error(buffer.str());
             }
         }
 
@@ -824,18 +838,30 @@ int main(int argc, char **argv) {
         // Verify that the correct number of nodes were added to the map.
         stringMapSize = stringRoot.size();
         if (stringMapSize != dictionary.size()) {
-            fprintf(stderr, "expected size for string tree %lu differs from actual size %lu\n",
-                    stringMapSize, dictionary.size());
+            ostringstream buffer;
+            buffer << endl << "expected size for string tree = " << stringMapSize
+                   << " differs from actual size = " << dictionary.size() << endl;
+            throw runtime_error(buffer.str());
         }
 
-        // Search the AVL map for each word.
+        // Search the AVL map for each key and value.
         clock_gettime(CLOCK_REALTIME, &startTime);
         for (size_t i = 0; i < dictionary.size(); ++i) {
+            if ( stringRoot.contains( dictionary[i] ) == false ) {
+                ostringstream buffer;
+                buffer << endl << "key " << dictionary[i] << " is not in string tree for contains" << endl;
+                throw runtime_error(buffer.str());
+            }
             uint32_t const* val = stringRoot.find( dictionary[i] );
             if (val == nullptr) {
-                fprintf(stderr, "key %s not in string tree for search\n", dictionary[i].c_str());
+                ostringstream buffer;
+                buffer << endl << "key " << dictionary[i] << " is not in string tree for find" << endl;
+                throw runtime_error(buffer.str());
             } else if (*val != i) {
-                fprintf(stderr, "wrong value %d for string key %s\n", *val, dictionary[i].c_str());
+                ostringstream buffer;
+                buffer << endl << "wrong value = " << (*val) << " for string key "
+                       << dictionary[i] << " expected value = " << i << endl;
+                throw runtime_error(buffer.str());
             }
         }
 
@@ -848,7 +874,9 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_REALTIME, &startTime);
         for (size_t i = 0; i < dictionary.size(); ++i) {
             if ( stringRoot.erase( dictionary[i] ) == false ) {
-                fprintf(stderr, "string key %s not in tree for deletion\n", dictionary[i].c_str());
+                ostringstream buffer;
+                buffer << endl << "string key " << dictionary[i] << " is not in tree for erase" << endl;
+                throw runtime_error(buffer.str());
             }
         }
 
@@ -858,19 +886,23 @@ int main(int argc, char **argv) {
 
         // Verify that the tree is empty
         if ( stringRoot.empty() == false ) {
-            fprintf(stderr, "%lu nodes remain in string tree following deletion\n", stringRoot.size());
+            ostringstream buffer;
+            buffer << endl << stringRoot.size() << " nodes remain in string tree following erasure" << endl;
+            throw runtime_error(buffer.str());
         }
     }
 
     // Report the string tree statistics.
-    fprintf(stderr, "number of words in string map = %lu\n", stringMapSize);
-    fprintf(stderr, "create string time = %.4f seconds\n", createStringTime/(double)iterations);
-    fprintf(stderr, "search string time = %.4f seconds\n", searchStringTime/(double)iterations);
-    fprintf(stderr, "delete string time = %.4f seconds\n", deleteStringTime/(double)iterations);
-    fprintf(stderr, "string LL = %zu  LR = %zu  RL = %zu  RR = %zu  total = %zu\n",
-            stringRoot.ll/iterations, stringRoot.lr/iterations,
-            stringRoot.rl/iterations, stringRoot.rr/iterations,
-            (stringRoot.ll+stringRoot.lr+stringRoot.rl+stringRoot.rr)/iterations);
+    cout << "number of words in string map = " << stringMapSize << endl;
+    cout << "create string time = " << setprecision(4) << (createStringTime/(double)iterations) << " seconds" << endl;
+    cout << "search string time = " << setprecision(4) << (searchStringTime/(double)iterations) << " seconds" << endl;
+    cout << "delete string time = " << setprecision(4) << (deleteStringTime/(double)iterations) << " seconds" << endl;
+    cout << "string insert LL = " << (stringRoot.lli/iterations) << "\tLR = " << (stringRoot.lri/iterations)
+         << "\tRL = " << (stringRoot.rli/iterations) << "\tRR = " << (stringRoot.rri/iterations)
+         << "\ttotal = " << ((stringRoot.lli+stringRoot.lri+stringRoot.rli+stringRoot.rri)/iterations) << endl;
+    cout << "string erase  LL = " << (stringRoot.lle/iterations) << "\tLR = " << (stringRoot.lre/iterations)
+         << "\tRL = " << (stringRoot.rle/iterations) << "\tRR = " << (stringRoot.rre/iterations)
+         << "\ttotal = " << ((stringRoot.lle+stringRoot.lre+stringRoot.rle+stringRoot.rre)/iterations) << endl;
 
     // Obtain statisitics for an AVL map that has an integer key.
     avlMap<uint32_t, uint32_t> integerRoot;
@@ -883,7 +915,9 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_REALTIME, &startTime);
         for (size_t i = 0; i < numbers.size(); i++) {
             if ( integerRoot.insert( numbers[i], i ) == true) {
-               fprintf(stderr, "key %d already in tree\n", numbers[i]);
+                ostringstream buffer;
+                buffer << endl << "key " << dictionary[i] << " is already in integer tree" << endl;
+                throw runtime_error(buffer.str());
             }
         }
 
@@ -894,18 +928,30 @@ int main(int argc, char **argv) {
         // Verify that the correct number of nodes were added to the tree
         integerMapSize = integerRoot.size();
         if (integerMapSize != numbers.size()) {
-            fprintf(stderr, "expected size for integer tree %lu differs from actual size %lu\n",
-                    integerMapSize, numbers.size());
+            ostringstream buffer;
+            buffer << endl << "expected size for integer tree = " << integerMapSize
+                   << " differs from actual size = " << dictionary.size() << endl;
+            throw runtime_error(buffer.str());
         }
 
         // Search for each integer in the AVL tree.
         clock_gettime(CLOCK_REALTIME, &startTime);
         for (size_t i = 0; i < numbers.size(); i++) {
+            if ( integerRoot.contains( numbers[i] ) == false ) {
+                ostringstream buffer;
+                buffer << endl << "key " << numbers[i] << " is not in integer tree for contains" << endl;
+                throw runtime_error(buffer.str());
+            }
             uint32_t const* val = integerRoot.find( numbers[i] );
             if (val == nullptr) {
-               fprintf(stderr, "key %d not in integer tree for search\n", numbers[i]);
+                ostringstream buffer;
+                buffer << endl << "key " << numbers[i] << " is not in integer tree for find" << endl;
+                throw runtime_error(buffer.str());
             } else if (*val != i) {
-                fprintf(stderr, "wrong value %d for key %d\n", *val, numbers[i]);
+                ostringstream buffer;
+                buffer << endl << "wrong value = " << (*val) << " for integer key "
+                       << dictionary[i] << " expected value = " << i << endl;
+                throw runtime_error(buffer.str());
             }
         }
 
@@ -918,7 +964,9 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_REALTIME, &startTime);
         for (size_t i = 0; i < numbers.size(); i++) {
             if ( integerRoot.erase( numbers[i] ) == false ) {
-                fprintf(stderr, "integer key %d not in tree for deletion\n", numbers[i]);
+                ostringstream buffer;
+                buffer << endl << "integer key " << numbers[i] << " is not in tree for erase" << endl;
+                throw runtime_error(buffer.str());
             }
         }
 
@@ -928,19 +976,23 @@ int main(int argc, char **argv) {
 
         // Verify that the tree is empty
         if ( integerRoot.empty() == false ) {
-            fprintf(stderr, "%lu nodes remain in integer tree following deletion\n", integerRoot.size());
+            ostringstream buffer;
+            buffer << endl << integerRoot.size() << " nodes remain in integer tree following erasure" << endl;
+            throw runtime_error(buffer.str());
         }
     }
 
     // Report the integer statistics.
-    fprintf(stderr, "number of integers in integer map = %lu\n", integerMapSize);
-    fprintf(stderr, "create integer time = %.4f seconds\n", createIntegerTime/(double)iterations);
-    fprintf(stderr, "search integer time = %.4f seconds\n", searchIntegerTime/(double)iterations);
-    fprintf(stderr, "delete integer time = %.4f seconds\n", deleteIntegerTime/(double)iterations);
-    fprintf(stderr, "string LL = %zu  LR = %zu  RL = %zu  RR = %zu  total = %zu\n",
-            integerRoot.ll/iterations, integerRoot.lr/iterations,
-            integerRoot.rl/iterations, integerRoot.rr/iterations,
-            (integerRoot.ll+integerRoot.lr+integerRoot.rl+integerRoot.rr)/iterations);
+    cout << "number of words in integer map = " << integerMapSize << endl;
+    cout << "create integer time = " << setprecision(4) << (createIntegerTime/(double)iterations) << " seconds" << endl;
+    cout << "search integer time = " << setprecision(4) << (searchIntegerTime/(double)iterations) << " seconds" << endl;
+    cout << "delete integer time = " << setprecision(4) << (deleteIntegerTime/(double)iterations) << " seconds" << endl;
+    cout << "integer insert LL = " << (integerRoot.lli/iterations) << "\tLR = " << (integerRoot.lri/iterations)
+         << "\tRL = " << (integerRoot.rli/iterations) << "\tRR = " << (integerRoot.rri/iterations)
+         << "\ttotal = " << ((integerRoot.lli+integerRoot.lri+integerRoot.rli+integerRoot.rri)/iterations) << endl;
+    cout << "integer erase  LL = " << (integerRoot.lle/iterations) << "\tLR = " << (integerRoot.lre/iterations)
+         << "\tRL = " << (integerRoot.rle/iterations) << "\tRR = " << (integerRoot.rre/iterations)
+         << "\ttotal = " << ((integerRoot.lle+integerRoot.lre+integerRoot.rle+integerRoot.rre)/iterations) << endl;
 
     return 0;
 }
