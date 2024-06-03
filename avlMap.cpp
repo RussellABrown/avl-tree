@@ -42,6 +42,9 @@
  * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_MAP avlMap.cpp
  */
 
+#ifndef AVL_MAP_CPP
+#define AVL_MAP_CPP
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -997,4 +1000,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-#endif
+#endif // TEST_AVL_MAP
+
+#endif // AVL_MAP_CPP

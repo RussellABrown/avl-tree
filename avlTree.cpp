@@ -42,6 +42,9 @@
  * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_TREE avlTree.cpp
  */
 
+#ifndef AVL_TREE_CPP
+#define AVL_TREE_CPP
+
 #include <iostream>
 #include <exception>
 #include <sstream>
@@ -783,4 +786,6 @@ int main() {
     return 0;
 }
 
-#endif
+#endif // TEST_AVL_TREE
+
+#endif // AVL_TREE_CPP
