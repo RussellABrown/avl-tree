@@ -50,13 +50,6 @@
 #include <sstream>
 #include <vector>
 
-using std::cin;
-using std::cout;
-using std::endl;
-using std::ostringstream;
-using std::runtime_error;
-using std::vector;
-
 /*
  * The avlTree class defines the root of the AVL tree as well as the avlNode class.
  */
@@ -505,9 +498,9 @@ class avlTree {
                             break;
                         default:
                             {
-                                ostringstream buffer;
-                                buffer << endl << (p->bal) << " is out of range" << endl;
-                                throw runtime_error(buffer.str());
+                                std::ostringstream buffer;
+                                buffer << std::endl << (p->bal) << " is out of range" << std::endl;
+                                throw std::runtime_error(buffer.str());
                             }
                     }
                 }
@@ -532,9 +525,9 @@ class avlTree {
                 right->printTree( d+1 );
             }
             for ( int i = 0; i < d; ++i ) {
-                cout << "    ";
+                std::cout << "    ";
             }
-            cout << key << "\n";
+            std::cout << key << "\n";
             if ( left ) {
                 left->printTree( d+1 );
             }
@@ -569,7 +562,7 @@ class avlTree {
          * @param i (MODIFIED) index to the next unoccupied vector element
          */       
     public:
-        void getKeys( vector<T>& v, size_t& i ) {
+        void getKeys( std::vector<T>& v, size_t& i ) {
 
             if ( left != nullptr ) {
                 left->getKeys( v, i );
@@ -706,7 +699,7 @@ public:
      * @param v (MODIFIED) vector of the keys
      */
 public:
-    void getKeys( vector<T>& v ) {
+    void getKeys( std::vector<T>& v ) {
         if ( root != nullptr ) {
             size_t i = 0;
             root->getKeys( v, i );
@@ -718,7 +711,14 @@ public:
 
 int main() {
 
-    /* 22 keys, one of which (14) is duplicated */
+    using std::cin;
+    using std::cout;
+    using std::endl;
+    using std::ostringstream;
+    using std::runtime_error;
+    using std::vector;
+
+   /* 22 keys, one of which (14) is duplicated */
     
    vector<int> const keys{ 8, 9, 11, 15, 19, 20, 21, 7, 3, 2, 1, 5, 6, 4, 13, 14, 10, 12, 14, 17, 16, 18 };
 

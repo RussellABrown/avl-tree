@@ -58,15 +58,6 @@
 #include <stdexcept>
 #include <vector>
 
-using std::cout;
-using std::endl;
-using std::ostringstream;
-using std::runtime_error;
-using std::setprecision;
-using std::random_shuffle;
-using std::string;
-using std::vector;
-
 /*
  * The avlMap class defines the root of the AVL map and provides the
  * lli, lri, rli, rri, lle, lre, rle, and rre rotation counters
@@ -564,9 +555,9 @@ class avlMap {
                             break;
                         default:
                             {
-                                ostringstream buffer;
-                                buffer << endl << (p->bal) << " is out of range" << endl;
-                                throw runtime_error(buffer.str());
+                                std::ostringstream buffer;
+                                buffer << std::endl << (p->bal) << " is out of range" << std::endl;
+                                throw std::runtime_error(buffer.str());
                             }
                     }
                 }
@@ -591,9 +582,9 @@ class avlMap {
                 right->printMap( d+1 );
             }
             for ( int i = 0; i < d; ++i ) {
-                cout << "    ";
+                std::cout << "    ";
             }
-            cout << key << "\n";
+            std::cout << key << "\n";
             if ( left ) {
                 left->printMap( d+1 );
             }
@@ -628,7 +619,7 @@ class avlMap {
          * @param i (MODIFIED) index to the next unoccupied vector element
          */       
     public:
-        void getKeys( vector<K>& v, size_t& i ) {
+        void getKeys( std::vector<K>& v, size_t& i ) {
 
             if ( left != nullptr ) {
                 left->getKeys( v, i );
@@ -784,7 +775,7 @@ public:
      * @param v (MODIFIED) vector of the keys
      */
 public:
-    void getKeys( vector<K>& v ) {
+    void getKeys( std::vector<K>& v ) {
         if ( root != nullptr ) {
             size_t i = 0;
             root->getKeys( v, i );
@@ -797,7 +788,16 @@ public:
 // A basic test
 int main(int argc, char **argv) {
     
-    struct timespec startTime, endTime;
+    using std::cout;
+    using std::endl;
+    using std::ostringstream;
+    using std::runtime_error;
+    using std::setprecision;
+    using std::random_shuffle;
+    using std::string;
+    using std::vector;
+
+   struct timespec startTime, endTime;
     size_t iterations = 100;
 
     // Read the words file into a dictionary. 
