@@ -1,4 +1,4 @@
-This implementation of an AVL tree achieves improved performance for deletion from the tree via the algorithm described in the following online article.
+This implementation of an AVL tree achieves improved performance for deletion from the AVL tree via the algorithm described in the following online article.
 
 https://arxiv.org/abs/2406.05162
 
