@@ -603,13 +603,14 @@ public:
         return ( count == 0 );
     }
 
-    /* This method searches the tree for the existence of a key.
+    /*
+     * This method searches the tree for the existence of a key.
      *
      * Calling parameter:
      *
-     * x - the key to search for
+     * @param x (IN) the key to search for
      * 
-     * return - true if the key was found; otherwise, false
+     * @return true if the key was found; otherwise, false
      */
 public:
     bool contains( T const& x ) {
