@@ -95,13 +95,10 @@ class avlMap {
             left = right = nullptr;
         }
         
-        /* This method searches the map for the existence of a key.
+        /*
+         * This method searches the map for the existence of a key.
          *
-         * The "this" pointer is copied to the "p" pointer that is
-         * replaced by either the left or right child pointer as the
-         * search iteratively descends through the map.
-         * 
-         * Calling parameters:
+         * Calling parameter:
          *
          * @param x (IN) the key to search for
          * 
@@ -109,19 +106,12 @@ class avlMap {
          */
     public:
         bool contains( K const& x ) {
-            
-            avlNode* p = this;
-            
-            while ( p != nullptr ) {                    /* iterate; don't use recursion */
-                if ( x < p->key ) {
-                    p = p->left;                        /* follow the left branch */
-                } else if ( x > p->key ) {
-                    p = p->right;                       /* follow the right branch */
-                } else {
-                    return true;                        /* found the key, so return true */
-                }
+
+            if ( find(x) == nullptr ) {
+                return false;
+            } else {
+                return true;
             }
-            return false;                               /* didn't find the key, so return false */
         }
 
         /*
@@ -132,7 +122,7 @@ class avlMap {
          * replaced by either the left or right child pointer as the
          * search iteratively descends through the map.
          * 
-         * Calling parameters:
+         * Calling parameter:
          *
          * @param x (IN) the key to search for
          * 
@@ -667,9 +657,9 @@ public:
      *
      * Calling parameter:
      *
-     * x - the key to search for
+     * @param x (IN) the key to search for
      * 
-     * return - true if the key was found; otherwise, false
+     * @return true if the key was found; otherwise, false
      */
 public:
     bool contains( K const& x ) {
@@ -685,7 +675,7 @@ public:
      *
      * Calling parameter:
      *
-     * x - the key to search for
+     * @param x (IN) the key to search for
      * 
      * @return a pointer to the value if the key was found; otherwise, nullptr */
 public:
