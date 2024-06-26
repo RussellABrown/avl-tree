@@ -32,11 +32,11 @@
  * AVL map building program adapted from Pascal procedures
  * 4.63 (p. 220) and 4.64 (p. 223) of Nicklaus Wirth's textbook,
  * "Algorithms + Data Structures = Programs", with correction
- * of the bug in the del() procedure and replacement of del
- * by the removeRight and removeLeft() methods. The removeRight()
+ * of the bug in the del procedure and replacement of del
+ * by the eraseRight and eraseLeft methods. The eraseRight
  * method performs the identical operations to del, whereas
- * the removeLeft method performs the mirror-image operations
- * to removeRight in an attempt to improve rebalancing efficiency
+ * the eraseLeft method performs the mirror-image operations
+ * to eraseRight in an attempt to improve rebalancing efficiency
  * after deletion.
  * 
  * To build the test executable, compile via: g++ -std=c++11 -O3 -D TEST_AVL_MAP avlMap.cpp
