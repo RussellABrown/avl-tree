@@ -61,7 +61,7 @@
 /*
  * The avlMap class defines the root of the AVL map and provides the
  * lli, lri, rli, rri, lle, lre, rle, and rre rotation counters
- * for the avlNode class to record rotation statistics.
+ * and the h, a, and r boolean variables to the avlNode class.
  */
 template <typename K, typename V>
 class avlMap {
@@ -160,27 +160,24 @@ class avlMap {
          * @param m (IN) a pointer to the avlMap instance
          * @param x (IN) the key to add to the map
          * @param y (IN) the value to add to the map
-         * @param h (MODIFIED) if true, the height of the map has changed
-         * @param a (MODIFIED) if true, the value was updated; otherwise,
-         *                     the (key, value) was inserted as a new avlNode
          */
     public:
-        avlNode* insert( avlMap* const m, K const& x, V const& y, bool& h, bool& a ) {
+        avlNode* insert( avlMap* const m, K const& x, V const& y ) {
             
             avlNode* p = this;
             
             if ( x < p->key ) {                         /* search the left branch? */
                 if ( p->left != nullptr ) {
-                    p->left = left->insert( m, x, y, h, a );
+                    p->left = left->insert( m, x, y );
                 } else {
-                    p->left = new avlNode( x, y, h );
-                    a = false;
+                    p->left = new avlNode( x, y, m->h );
+                    m->a = false;
                 }
-                if ( h == true ) {                      /* left branch has grown higher */
+                if ( m->h == true ) {                      /* left branch has grown higher */
                     switch ( p->bal ) {
                         case 1:                         /* balance restored */
                             p->bal = 0;
-                            h = false;
+                            m->h = false;
                             break;
                         case 0:                         /* map has become more unbalanced */
                             p->bal = -1;
@@ -213,22 +210,22 @@ class avlMap {
                                 p = p2;
                             }
                             p->bal = 0;
-                            h = false;
+                            m->h = false;
                             break;
                     }
                 }
             } else if ( x > p->key ) {                  /* search the right branch? */
                 if ( p->right != nullptr ) {
-                    p->right = right->insert( m, x, y, h, a );
+                    p->right = right->insert( m, x, y );
                 } else {
-                    p->right = new avlNode( x, y, h );
-                    a = false;
+                    p->right = new avlNode( x, y, m->h );
+                    m->a = false;
                 }
-                if ( h == true ) {                      /* right branch has grown higher */
+                if ( m->h == true ) {                      /* right branch has grown higher */
                     switch ( p->bal ) {
                         case -1:                        /* balance restored */
                             p->bal = 0;
-                            h = false;
+                            m->h = false;
                             break;
                         case 0:                         /* map has become more unbalanced */
                             p->bal = 1;
@@ -261,14 +258,14 @@ class avlMap {
                                 p = p2;
                             }
                             p->bal = 0;
-                            h = false;
+                            m->h = false;
                             break;
                     }
                 }
             } else {  /* the key is already in map, so update its value */
                 p->value = y;
-                h = false;
-                a = true;
+                m->h = false;
+                m->a = true;
             }
             return p;  /* the root of the rebalanced sub-map */
         }
@@ -284,12 +281,11 @@ class avlMap {
          * Calling parameters:
          * 
          * @param m (IN) a pointer to the avlMap instance
-         * @param h (MODIFIED) if true, the height of the map has changed
          * 
          * @return the root of the rebalanced sub-map
          */
     private:
-        avlNode* balanceLeft( avlMap* const m, bool& h ) {
+        avlNode* balanceLeft( avlMap* const m ) {
             
             avlNode* p = this;
             
@@ -299,7 +295,7 @@ class avlMap {
                     break;
                 case 0:                     /* map has become more unbalanced */
                     p->bal = 1;
-                    h = false;
+                    m->h = false;
                     break;
                 case 1:                     /* map must be rebalanced */
                     avlNode* p1 = p->right;
@@ -310,7 +306,7 @@ class avlMap {
                         if ( p1->bal == 0 ) {
                             p->bal = 1;
                             p1->bal = -1;
-                            h = false;
+                            m->h = false;
                         } else {
                             p->bal = 0;
                             p1->bal = 0;
@@ -352,12 +348,11 @@ class avlMap {
          * Calling parameters:
          * 
          * @param m (IN) a pointer to the avlMap instance
-         * @param h (MODIFIED) if true, the height of the map has changed
          * 
          * @return the root of the rebalanced sub-map
          */
     private:
-        avlNode* balanceRight( avlMap* const m, bool& h ) {
+        avlNode* balanceRight( avlMap* const m ) {
             
             avlNode* p = this;
             
@@ -367,7 +362,7 @@ class avlMap {
                     break;
                 case 0:                     /* map has become more unbalanced */
                     p->bal = -1;
-                    h = false;
+                    m->h = false;
                     break;
                 case -1:                    /* map must be rebalanced */
                     avlNode* p1 = p->left;
@@ -378,7 +373,7 @@ class avlMap {
                         if ( p1->bal == 0 ) {
                             p->bal = -1;
                             p1->bal = 1;
-                            h = false;
+                            m->h = false;
                         } else {
                             p->bal = 0;
                             p1->bal = 0;
@@ -422,24 +417,23 @@ class avlMap {
          * 
          * @param m (IN) a pointer to the avlMap instance
          * @param q (MODIFIED) the avlNode to be deleted
-         * @param h (MODIFIED) if true, the height of the map has changed
          * 
          * @return the root of the rebalanced sub-map
          */
      private:
-        avlNode* eraseLeft( avlMap* const m, avlNode*& q, bool& h ) {
+        avlNode* eraseLeft( avlMap* const m, avlNode*& q ) {
             
             avlNode* p = this;
             
             if ( p->left != nullptr ) {
-                p->left = left->eraseLeft( m, q, h );
-                if ( h == true ) p = balanceLeft( m, h );
+                p->left = left->eraseLeft( m, q );
+                if ( m->h == true ) p = balanceLeft( m );
             } else {
                 q->key = p->key;                /* copy avlNode contents from p to q */
                 q->value = p->value;
                 q = p;                          /* redefine q as avlNode to be deleted */
                 p = p->right;                   /* replace avlNode with right branch */
-                h = true;
+                m->h = true;
             }
             return p;  /* the root of the rebalanced sub-map */
         }
@@ -457,24 +451,23 @@ class avlMap {
          * 
          * @param m (IN) a pointer to the avlMap instance
          * @param q (MODIFIED) the avlNode to be deleted
-         * @param h (MODIFIED) if true, the height of the map has changed
          * 
          * @return the root of the rebalanced sub-map
          */
     private:
-        avlNode* eraseRight( avlMap* const m, avlNode*& q, bool& h ) {
+        avlNode* eraseRight( avlMap* const m, avlNode*& q ) {
             
             avlNode* p = this;
             
             if ( p->right != nullptr ) {
-                p->right = p->right->eraseRight( m, q, h );
-                if ( h == true ) p = balanceRight( m, h );
+                p->right = p->right->eraseRight( m, q );
+                if ( m->h == true ) p = balanceRight( m );
             } else {
                 q->key = p->key;                /* copy avlNode contents from p to q */
                 q->value = p->value;
                 q = p;                          /* redefine q as avlNode to be deleted  */
                 p = p->left;                    /* replace avlNode with left branch */
-                h = true;
+                m->h = true;
             }
             return p;  /* the root of the rebalanced sub-map */
         }
@@ -491,56 +484,54 @@ class avlMap {
          * 
          * @param m (IN) a pointer to the avlMap instance
          * @param x (IN) the key to remove from the map
-         * @param h (MODIFIED) if true, the height of the map has changed
-         * @param r (MODIFIED) if true, the key was removed from the map
          * 
          * @return the root of the rebalanced sub-map
         */
      public:
-        avlNode* erase( avlMap* const m, K const& x, bool& h, bool& r ) {
+        avlNode* erase( avlMap* const m, K const& x ) {
             
             avlNode* p = this;
             
             if ( x < p->key ) {                     /* search left branch? */
                 if ( p->left != nullptr ) {
-                    p->left = p->left->erase( m, x, h, r );
-                    if ( h ) {
-                        p = balanceLeft( m, h );
+                    p->left = p->left->erase( m, x );
+                    if ( m->h ) {
+                        p = balanceLeft( m );
                     }
                 } else {
-                    h = false;                      /* key is not in the map*/
-                    r = false;
+                    m->h = false;                      /* key is not in the map*/
+                    m->r = false;
                 }
             } else if ( x > p->key ) {              /* search right branch? */
                 if ( p->right != nullptr ) {
-                    p->right = p->right->erase( m, x, h, r );
-                    if ( h ) {
-                        p = balanceRight( m, h );
+                    p->right = p->right->erase( m, x );
+                    if ( m->h ) {
+                        p = balanceRight( m );
                     }
                 } else {
-                    h = false;                      /* key is not in the map */
-                    r = false;
+                    m->h = false;                      /* key is not in the map */
+                    m->r = false;
                 }
             } else {                                /* the search key equals the key for this node */
                 avlNode* q = p;                     /* so select this avlNode for removal */
                 if ( p->right == nullptr ) {        /* if one branch is nullptr... */
                     p = p->left;
-                    h = true;
+                    m->h = true;
                 } else if ( p->left == nullptr ) {  /* ...replace with the other one */
                     p = p->right;
-                    h = true;
+                    m->h = true;
                 } else {
                     switch ( p->bal ) {             /* otherwise find an avlNode to remove */
                         case 0: case -1:            /* left or neither submap is deeper */
-                            p->left = p->left->eraseRight( m, q, h );
-                            if ( h == true ) {
-                                p = balanceLeft( m, h );
+                            p->left = p->left->eraseRight( m, q );
+                            if ( m->h == true ) {
+                                p = balanceLeft( m );
                             }
                             break;
                         case 1:                     /* right submap is deeper */
-                            p->right = p->right->eraseLeft( m, q, h );
-                            if ( h == true ) {
-                                p = balanceRight( m, h );
+                            p->right = p->right->eraseLeft( m, q );
+                            if ( m->h == true ) {
+                                p = balanceRight( m );
                             }
                             break;
                         default:
@@ -552,7 +543,7 @@ class avlMap {
                     }
                 }
                 delete q;
-                r = true;
+                m->r = true;
             }
             return p;  /* the root of the rebalanced sub-map */
         }
@@ -622,8 +613,9 @@ class avlMap {
     };
 
 private:
-    avlNode* root;   /* the root of the map */
-    size_t count;    /* the number of nodes in the map */
+    avlNode* root;  /* the root of the map */
+    size_t count;   /* the number of nodes in the map */
+    bool h, a, r;  /* signal modification of the map */
 
 public:
     size_t lle, lre, rle, rre, lli, lri, rli, rri;  /* the rotation counters */
@@ -632,6 +624,7 @@ public:
     avlMap() {
         root = nullptr;
         lle = lre = rle = rre = lli = lri = rli = rri = count = 0;
+        h = a = r = false;
     }
     
 public:
@@ -700,9 +693,9 @@ public:
      */
 public:
     bool insert( K const& x, V const& y ) {
-        bool h = false, a = false;
+        h = false, a = false;
         if ( root != nullptr ) {
-            root = root->insert( this, x, y, h, a );
+            root = root->insert( this, x, y );
             if ( a == false ) {
                 ++count;
             }
@@ -725,9 +718,9 @@ public:
      */
 public:
     bool erase( K const& x ) {
-        bool h = false, r = false;
+        h = false, r = false;
         if ( root != nullptr ) {
-            root = root->erase( this, x, h, r );
+            root = root->erase( this, x );
             if ( r == true ) {
                 --count;
             }
