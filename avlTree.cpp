@@ -728,18 +728,18 @@ int main() {
     int const presentKey = 13, duplicatekey = 14, missingKey = 0;
     
     char ch;
-    avlTree<int>* t = new avlTree<int>();
+    avlTree<int> t;
 
     /* Add each key to the AVL tree. */
 
     for ( size_t i = 0; i < keys.size(); ++i ) {
         cout << endl << "press return to add " << keys[i] << endl;
         ch = cin.get();
-        if ( t->insert(keys[i]) == false && keys[i] != duplicatekey ) {
+        if ( t.insert(keys[i]) == false && keys[i] != duplicatekey ) {
             cout << "error: failure to insert key " << keys[i] << endl;
         }
-        cout << "tree contains " << t->size() << " nodes" << endl << endl;
-        t->printTree();
+        cout << "tree contains " << t.size() << " nodes" << endl << endl;
+        t.printTree();
     }
 
     cout << endl << "*** balanced tree completed; ordered keys follow ***" << endl << endl;
@@ -749,8 +749,8 @@ int main() {
      * Pre-allocate the vector to avoid re-sizing it.
      */
 
-    vector<int> sortedKeys( t->size() );
-    t->getKeys( sortedKeys );
+    vector<int> sortedKeys( t.size() );
+    t.getKeys( sortedKeys );
     for (size_t i = 0; i < sortedKeys.size(); ++i) {
         cout << sortedKeys[i] << " ";
     }
@@ -758,16 +758,16 @@ int main() {
 
     /* Test the contains() function. */
 
-    if ( t->contains( presentKey ) == false ) {
+    if ( t.contains( presentKey ) == false ) {
         cout << endl << "error: does not contain key " << presentKey << endl;
     }
-    if ( t->contains( missingKey ) == true ) {
+    if ( t.contains( missingKey ) == true ) {
         cout << endl << "error: contains missing key " << missingKey << endl;
     }
 
     /* Test the erase() function for a missing key. */
 
-    if ( t->erase( missingKey ) == true ) {
+    if ( t.erase( missingKey ) == true ) {
         cout << endl << "error: erased missing key " << missingKey << endl;
     }
 
@@ -776,11 +776,11 @@ int main() {
     for ( size_t i = 0; i < keys.size(); ++i ) {
         cout << endl << "press return to remove " << keys[i] << endl;
         ch = cin.get();
-        if ( t->erase(keys[i]) == false && keys[i] != duplicatekey ) {
+        if ( t.erase(keys[i]) == false && keys[i] != duplicatekey ) {
             cout << "error: failure to erase key " << keys[i] << endl;
         }
-        cout << "tree contains " << t->size() << " nodes" << endl << endl;
-        t->printTree();
+        cout << "tree contains " << t.size() << " nodes" << endl << endl;
+        t.printTree();
     }
     cout << "all done" << endl << endl;
     
