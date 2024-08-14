@@ -171,9 +171,9 @@ class avlMap {
                     p->left = left->insert( m, x, y );
                 } else {
                     p->left = new avlNode( x, y, m->h );
-                    m->a = false;
+                    m->a = false;                       /* the present value is overwritten */
                 }
-                if ( m->h == true ) {                      /* left branch has grown higher */
+                if ( m->h == true ) {                   /* left branch has grown higher */
                     switch ( p->bal ) {
                         case 1:                         /* balance restored */
                             p->bal = 0;
@@ -219,9 +219,9 @@ class avlMap {
                     p->right = right->insert( m, x, y );
                 } else {
                     p->right = new avlNode( x, y, m->h );
-                    m->a = false;
+                    m->a = false;                       /* the present value is overwritten */
                 }
-                if ( m->h == true ) {                      /* right branch has grown higher */
+                if ( m->h == true ) {                   /* right branch has grown higher */
                     switch ( p->bal ) {
                         case -1:                        /* balance restored */
                             p->bal = 0;
@@ -499,7 +499,7 @@ class avlMap {
                         p = balanceLeft( m );
                     }
                 } else {
-                    m->h = false;                      /* key is not in the map*/
+                    m->h = false;                   /* key is not in the map*/
                     m->r = false;
                 }
             } else if ( x > p->key ) {              /* search right branch? */
@@ -509,7 +509,7 @@ class avlMap {
                         p = balanceRight( m );
                     }
                 } else {
-                    m->h = false;                      /* key is not in the map */
+                    m->h = false;                   /* key is not in the map */
                     m->r = false;
                 }
             } else {                                /* the search key equals the key for this node */
@@ -615,7 +615,7 @@ class avlMap {
 private:
     avlNode* root;  /* the root of the map */
     size_t count;   /* the number of nodes in the map */
-    bool h, a, r;  /* signal modification of the map */
+    bool h, a, r;   /* record modification of the map */
 
 public:
     size_t lle, lre, rle, rre, lli, lri, rli, rri;  /* the rotation counters */

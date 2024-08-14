@@ -51,7 +51,8 @@
 #include <vector>
 
 /*
- * The avlTree class defines the root of the AVL tree as well as the avlNode class.
+ * The avlTree class defines the root of the AVL map and provides the
+ * h, a, and r boolean variables to the avlNode class.
  */
 template <typename T>
 class avlTree {
@@ -124,29 +125,28 @@ class avlTree {
          *
          * Calling parameters:
          *
+         * @param t (IN) a pointer to the avlTree instance
          * @param x (IN) the key to add to the tree
-         * @param h (MODIFIED) if true, the height of the tree has changed
-         * @param a (MODIFIED) if true, the key was added as a new avlNode
          * 
          * @return the root of the rebalanced sub-tree
          */
     public:
-        avlNode* insert( T const& x, bool& h, bool& a ) {
+        avlNode* insert( avlTree* const t,  T const& x ) {
             
             avlNode* p = this;
             
             if ( x < p->key ) {                         /* search the left branch? */
                 if ( p->left != nullptr ) {
-                    p->left = left->insert( x, h, a );
+                    p->left = left->insert( t, x );
                 } else {
-                    p->left = new avlNode( x, h );
-                    a = true;
+                    p->left = new avlNode( x, t->h );
+                    t->a = true;
                 }
-                if ( h == true ) {                      /* left branch has grown higher */
+                if ( t->h == true ) {                   /* left branch has grown higher */
                     switch ( p->bal ) {
                         case 1:                         /* balance restored */
                             p->bal = 0;
-                            h = false;
+                            t->h = false;
                             break;
                         case 0:                         /* tree has become more unbalanced */
                             p->bal = -1;
@@ -177,22 +177,22 @@ class avlTree {
                                 p = p2;
                             }
                             p->bal = 0;
-                            h = false;
+                            t->h = false;
                             break;
                     }
                 }
             } else if ( x > p->key ) {                  /* search the right branch? */
                 if ( p->right != nullptr ) {
-                    p->right = right->insert( x, h, a );
+                    p->right = right->insert( t, x );
                 } else {
-                    p->right = new avlNode( x, h );
-                    a = true;
+                    p->right = new avlNode( x, t->h );
+                    t->a = true;
                 }
-                if ( h == true ) {                      /* right branch has grown higher */
+                if ( t->h == true ) {                   /* right branch has grown higher */
                     switch ( p->bal ) {
                         case -1:                        /* balance restored */
                             p->bal = 0;
-                            h = false;
+                            t->h = false;
                             break;
                         case 0:                         /* tree has become more unbalanced */
                             p->bal = 1;
@@ -223,14 +223,14 @@ class avlTree {
                                 p = p2;
                             }
                             p->bal = 0;
-                            h = false;
+                            t->h = false;
                             break;
                     }
                 }
             } else {  /* the key is already in tree, so increment "copies" and don't modify the tree */
                 p->copies++;
-                h = false;
-                a = false;
+                t->h = false;
+                t->a = false;
             }
             return p;  /* the root of the rebalanced sub-tree */
         }
@@ -245,12 +245,12 @@ class avlTree {
          * 
          * Calling parameter:
          * 
-         * @param h (MODIFIED) if true, the height of the tree has changed
+         * @param t (IN) a pointer to the avlTree instance
          * 
          * @return the root of the rebalanced sub-tree
          */
     private:
-        avlNode* balanceLeft( bool& h ) {
+        avlNode* balanceLeft( avlTree* const t ) {
             
             avlNode* p = this;
             
@@ -260,7 +260,7 @@ class avlTree {
                     break;
                 case 0:                     /* tree has become more unbalanced */
                     p->bal = 1;
-                    h = false;
+                    t->h = false;
                     break;
                 case 1:                     /* tree must be rebalanced */
                     avlNode* p1 = p->right;
@@ -270,7 +270,7 @@ class avlTree {
                         if ( p1->bal == 0 ) {
                             p->bal = 1;
                             p1->bal = -1;
-                            h = false;
+                            t->h = false;
                         } else {
                             p->bal = 0;
                             p1->bal = 0;
@@ -310,12 +310,12 @@ class avlTree {
          * 
          * Calling parameter:
          * 
-         * @param h (MODIFIED) if true, the height of the tree has changed
+         * @param t (IN) a pointer to the avlTree instance
          * 
          * @return the root of the rebalanced sub-tree
          */
     private:
-        avlNode* balanceRight( bool& h ) {
+        avlNode* balanceRight( avlTree* const t ) {
             
             avlNode* p = this;
             
@@ -325,7 +325,7 @@ class avlTree {
                     break;
                 case 0:                     /* tree has become more unbalanced */
                     p->bal = -1;
-                    h = false;
+                    t->h = false;
                     break;
                 case -1:                    /* tree must be rebalanced */
                     avlNode* p1 = p->left;
@@ -335,7 +335,7 @@ class avlTree {
                         if ( p1->bal == 0 ) {
                             p->bal = -1;
                             p1->bal = 1;
-                            h = false;
+                            t->h = false;
                         } else {
                             p->bal = 0;
                             p1->bal = 0;
@@ -376,25 +376,25 @@ class avlTree {
          * 
          * Calling parameters:
          * 
+         * @param t (IN) a pointer to the avlTree instance
          * @param q (MODIFIED) the avlNode to be deleted
-         * @param h (MODIFIED) if true, the height of the tree has changed
          * 
          * @return the root of the rebalanced sub-tree
          */
      private:
-        avlNode* eraseLeft( avlNode*& q, bool& h ) {
+        avlNode* eraseLeft( avlTree* const t, avlNode*& q ) {
             
             avlNode* p = this;
             
             if ( p->left != nullptr ) {
-                p->left = left->eraseLeft( q, h );
-                if ( h == true ) p = balanceLeft( h );
+                p->left = left->eraseLeft( t, q );
+                if ( t->h == true ) p = balanceLeft( t );
             } else {
                 q->key = p->key;                /* copy avlNode contents from p to q */
                 q->copies = p->copies;
                 q = p;                          /* redefine q as avlNode to be deleted */
                 p = p->right;                   /* replace avlNode with right branch */
-                h = true;
+                t->h = true;
             }
             return p;  /* the root of the rebalanced sub-tree */
         }
@@ -410,25 +410,25 @@ class avlTree {
          * 
          * Calling parameters:
          * 
+         * @param t (IN) a pointer to the avlTree instance
          * @param q (MODIFIED) the avlNode to be deleted
-         * @param h (MODIFIED) if true, the height of the tree has changed
          * 
          * @return the root of the rebalanced sub-tree
          */
     private:
-        avlNode* eraseRight( avlNode*& q, bool& h ) {
+        avlNode* eraseRight( avlTree* const t, avlNode*& q ) {
             
             avlNode* p = this;
             
             if ( p->right != nullptr ) {
-                p->right = p->right->eraseRight( q, h );
-                if ( h == true ) p = balanceRight( h );
+                p->right = p->right->eraseRight( t, q );
+                if ( t->h == true ) p = balanceRight( t );
             } else {
                 q->key = p->key;                /* copy avlNode contents from p to q */
                 q->copies = p->copies;
                 q = p;                          /* redefine q as avlNode to be deleted  */
                 p = p->left;                    /* replace avlNode with left branch */
-                h = true;
+                t->h = true;
             }
             return p;  /* the root of the rebalanced sub-tree */
         }
@@ -443,57 +443,56 @@ class avlTree {
          * 
          * Calling parameters:
          * 
+         * @param t (IN) a pointer to the avlTree instance
          * @param x (IN) the key to remove from the tree
-         * @param h (MODIFIED) if true, the height of the tree has changed
-         * @param r (MODIFIED) if true, the key was removed from the tree
          * 
          * @return the root of the rebalanced sub-tree
         */
      public:
-        avlNode* erase( T const& x, bool& h, bool& r ) {
+        avlNode* erase( avlTree* const t, T const& x ) {
             
             avlNode* p = this;
             
             if ( x < p->key ) {                     /* search left branch? */
                 if ( p->left != nullptr ) {
-                    p->left = p->left->erase( x, h, r );
-                    if ( h ) {
-                        p = balanceLeft( h );
+                    p->left = p->left->erase( t, x );
+                    if ( t->h ) {
+                        p = balanceLeft( t );
                     }
                 } else {
-                    h = false;                      /* key is not in the tree*/
-                    r = false;
+                    t->h = false;                   /* key is not in the tree*/
+                    t->r = false;
                 }
             } else if ( x > p->key ) {              /* search right branch? */
                 if ( p->right != nullptr ) {
-                    p->right = p->right->erase( x, h, r );
-                    if ( h ) {
-                        p = balanceRight( h );
+                    p->right = p->right->erase( t, x );
+                    if ( t->h ) {
+                        p = balanceRight( t );
                     }
                 } else {
-                    h = false;                      /* key is not in the tree */
-                    r = false;
+                    t->h = false;                   /* key is not in the tree */
+                    t->r = false;
                 }
             } else if ( p->copies-- <= 1 ) {        /* x == key and not redundant, so... */
                 avlNode* q = p;                     /* ...select this avlNode for removal */
                 if ( p->right == nullptr ) {        /* if one branch is nullptr... */
                     p = p->left;
-                    h = true;
+                    t->h = true;
                 } else if ( p->left == nullptr ) {  /* ...replace with the other one */
                     p = p->right;
-                    h = true;
+                    t->h = true;
                 } else {
                     switch ( p->bal ) {             /* otherwise find an avlNode to remove */
                         case 0: case -1:            /* left or neither subtree is deeper */
-                            p->left = p->left->eraseRight( q, h );
-                            if ( h == true ) {
-                                p = balanceLeft( h );
+                            p->left = p->left->eraseRight( t, q );
+                            if ( t->h == true ) {
+                                p = balanceLeft( t );
                             }
                             break;
                         case 1:                     /* right subtree is deeper */
-                            p->right = p->right->eraseLeft( q, h );
-                            if ( h == true ) {
-                                p = balanceRight( h );
+                            p->right = p->right->eraseLeft( t, q );
+                            if ( t->h == true ) {
+                                p = balanceRight( t );
                             }
                             break;
                         default:
@@ -505,7 +504,7 @@ class avlTree {
                     }
                 }
                 delete q;
-                r = true;
+                t->r = true;
             }
             return p;  /* the root of the rebalanced sub-tree */
         }
@@ -577,11 +576,13 @@ class avlTree {
 private:
     avlNode* root;  /* the root of the tree */
     size_t count;   /* the number of nodes in the tree */
-   
+    bool h, a, r;   /* record modification of the tree */
+  
 public:
     avlTree() {
         root = nullptr;
         count = 0;
+        h = a = r = false;
     }
     
 public:
@@ -635,9 +636,9 @@ public:
      */
 public:
     bool insert( T const& x ) {
-        bool h = false, a = true;
+        h = false, a = true;
         if ( root != nullptr ) {
-            root = root->insert( x, h, a );
+            root = root->insert( this, x );
             if ( a == true ) {
                 ++count;
             }
@@ -660,9 +661,9 @@ public:
      */
 public:
     bool erase( T const& x ) {
-        bool h = false, r = false;
+        h = false, r = false;
         if ( root != nullptr ) {
-            root = root->erase( x, h, r );
+            root = root->erase( this, x );
             if ( r == true ) {
                 --count;
             }
