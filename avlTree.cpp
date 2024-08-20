@@ -51,7 +51,7 @@
 #include <vector>
 
 /*
- * The avlTree class defines the root of the AVL map and provides the
+ * The avlTree class defines the root of the AVL tree and provides the
  * h, a, and r boolean variables to the avlNode class.
  */
 template <typename T>
