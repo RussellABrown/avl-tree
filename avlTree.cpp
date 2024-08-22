@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, 2023, 2024, Russell A. Brown
+ * Modifications Copyright (c) 1996, 2016, 2023, 2024 Russell A. Brown
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -29,7 +29,7 @@
  */
 
 /*
- * AVL tree-building program adapted from Pascal procedures
+ * AVL tree-building program modified from Pascal procedures
  * 4.63 (p. 220) and 4.64 (p. 223) of Nicklaus Wirth's textbook,
  * "Algorithms + Data Structures = Programs" with correction
  * of the bug in the del procedure and bifurcation of that
