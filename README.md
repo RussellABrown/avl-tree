@@ -1,4 +1,4 @@
-This C++ implementation of an AVL tree achieves improved performance for AVL node deletion via the algorithm proposed by Caxton C. Foster in his 1965 article, A Study of AVL Trees (Goodyear Aerospace Corporation internal document GER-12158, a copy of which is uploaded to this Git repository) and also described in the following pre-print article.
+This C++ implementation of an AVL tree achieves improved performance for AVL node deletion via the algorithm proposed by Caxton C. Foster in his 1965 article, "A Study of AVL Trees" (Goodyear Aerospace Corporation internal document GER-12158), and also described in the following pre-print article.
 
 https://arxiv.org/abs/2406.05162
 
